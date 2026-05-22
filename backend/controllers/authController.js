@@ -1,4 +1,6 @@
 import User from "../models/User.js";
+import Student from "../models/Student.js";
+import Teacher from "../models/Teacher.js";
 import generateToken from "../utils/generateToken.js";
 
 const buildAuthResponse = (user) => ({
@@ -40,6 +42,8 @@ export const registerStudent = async (req, res) => {
       role: "student",
     });
 
+    await Student.create({ user: user._id });
+
     res.status(201).json({
       message: "Student registered successfully",
       user: buildAuthResponse(user),
@@ -59,7 +63,12 @@ export const registerTeacher = async (req, res) => {
       qualification,
       yearsOfExperience,
       degreeSpecialization,
+      experience,
+      specialization,
     } = req.body;
+
+    const teacherExperience = yearsOfExperience ?? experience;
+    const teacherSpecialization = degreeSpecialization ?? specialization;
 
     if (
       !fullName ||
@@ -67,9 +76,9 @@ export const registerTeacher = async (req, res) => {
       !password ||
       !confirmPassword ||
       !qualification ||
-      yearsOfExperience === undefined ||
-      yearsOfExperience === "" ||
-      !degreeSpecialization
+      teacherExperience === undefined ||
+      teacherExperience === "" ||
+      !teacherSpecialization
     ) {
       return res.status(400).json({ message: "All fields are required" });
     }
@@ -84,7 +93,7 @@ export const registerTeacher = async (req, res) => {
         .json({ message: "Password must be at least 6 characters" });
     }
 
-    const years = Number(yearsOfExperience);
+    const years = Number(teacherExperience);
     if (Number.isNaN(years) || years < 0) {
       return res
         .status(400)
@@ -103,7 +112,17 @@ export const registerTeacher = async (req, res) => {
       role: "teacher",
       qualification,
       yearsOfExperience: years,
-      degreeSpecialization,
+      experience: years,
+      degreeSpecialization: teacherSpecialization,
+      specialization: teacherSpecialization,
+      verificationStatus: "pending",
+    });
+
+    await Teacher.create({
+      user: user._id,
+      qualification,
+      experience: years,
+      specialization: teacherSpecialization,
       verificationStatus: "pending",
     });
 

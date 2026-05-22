@@ -6,6 +6,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import courseRoutes from "./routes/courseRoutes.js";
+import moduleRoutes from "./routes/moduleRoutes.js";
+import submoduleRoutes from "./routes/submoduleRoutes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -34,6 +37,10 @@ app.get("/api/health", (req, res) =>
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/teacher", courseRoutes);
+app.use("/api/courses", courseRoutes);
+app.use("/api/modules", moduleRoutes);
+app.use("/api/submodules", submoduleRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });

@@ -33,6 +33,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    experience: {
+      type: Number,
+      min: 0,
+    },
+    specialization: {
+      type: String,
+      trim: true,
+    },
     yearsOfExperience: {
       type: Number,
       min: 0,
@@ -58,6 +66,23 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userSchema.pre("validate", function () {
+  if (this.role !== "teacher") return;
+
+  if (this.yearsOfExperience == null && this.experience != null) {
+    this.yearsOfExperience = this.experience;
+  }
+  if (this.experience == null && this.yearsOfExperience != null) {
+    this.experience = this.yearsOfExperience;
+  }
+  if (!this.degreeSpecialization && this.specialization) {
+    this.degreeSpecialization = this.specialization;
+  }
+  if (!this.specialization && this.degreeSpecialization) {
+    this.specialization = this.degreeSpecialization;
+  }
+});
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
