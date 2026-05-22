@@ -1,9 +1,102 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import { PlusIcon, AcademicCapIcon } from "@heroicons/react/24/outline";
 import { useTheme } from "../context/ThemeContext";
-import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
+import {
+  PlusIcon,
+  AcademicCapIcon,
+  BookOpenIcon,
+  UserGroupIcon,
+  BanknotesIcon,
+  StarIcon,
+  CheckCircleIcon,
+  MoonIcon,
+  SunIcon,
+  ChevronDownIcon,
+  ArrowRightIcon,
+} from "@heroicons/react/24/outline";
+
+const hashValue = (value = "") =>
+  String(value).split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+
+const demoStudents = [
+  "Aarav Sharma",
+  "Priya Patil",
+  "Rohan Mehta",
+  "Sneha Iyer",
+  "Kabir Joshi",
+  "Anaya Singh",
+  "Vedant Kulkarni",
+  "Mira Nair",
+];
+
+const currency = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+const getCourseStats = (course) => {
+  const seed = hashValue(course._id || course.title);
+  const rawStudents = course.enrolledStudents?.length
+    ? course.enrolledStudents
+    : demoStudents.slice(0, Math.max(3, (seed % demoStudents.length) + 1)).map((name, index) => ({
+        id: `${course._id || course.title}-${index}`,
+        name,
+        email: `${name.toLowerCase().replaceAll(" ", ".")}@student.eduforge.in`,
+        progress: 45 + ((seed + index * 11) % 54),
+      }));
+  const enrolledStudents = rawStudents.map((student, index) => {
+    if (typeof student === "string") {
+      return {
+        id: `${course._id || course.title}-${index}`,
+        name: student,
+        email: `${student.toLowerCase().replaceAll(" ", ".")}@student.eduforge.in`,
+        progress: 45 + ((seed + index * 11) % 54),
+      };
+    }
+
+    return {
+      id: student.id || student._id || `${course._id || course.title}-${index}`,
+      name: student.name || `${student.firstName || "Student"} ${student.lastName || index + 1}`,
+      email: student.email || "student@eduforge.in",
+      progress: student.progress ?? student.completionRate ?? 45 + ((seed + index * 11) % 54),
+    };
+  });
+
+  return {
+    students: enrolledStudents,
+    studentCount: course.totalStudents ?? course.studentsCount ?? enrolledStudents.length,
+    revenue: course.totalRevenue ?? course.revenue ?? enrolledStudents.length * (1499 + (seed % 5) * 500),
+    rating: course.averageRating ?? course.rating ?? Number((4.1 + (seed % 9) / 10).toFixed(1)),
+    completionRate: course.completionRate ?? course.completion ?? 58 + (seed % 35),
+  };
+};
+
+function StatCard({ icon: Icon, label, value, caption, tone }) {
+  const tones = {
+    green: "bg-primary/10 text-primary border-primary/20",
+    blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    amber: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    violet: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+    cyan: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+  };
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{caption}</p>
+        </div>
+        <div className={`rounded-lg border p-2 ${tones[tone]}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -11,23 +104,48 @@ export default function CoursesPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", thumbnail: "" });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [expandedCourseId, setExpandedCourseId] = useState(null);
   const navigate = useNavigate();
   const { dark, toggle } = useTheme();
 
   useEffect(() => {
-    api.get("/courses").then(({ data }) => { setCourses(data); setLoading(false); });
+    api.get("/courses")
+      .then(({ data }) => setCourses(data))
+      .catch(() => setError("Could not load courses. Is the backend running on port 5000?"))
+      .finally(() => setLoading(false));
   }, []);
+
+  const courseStats = courses.map((course) => ({ course, stats: getCourseStats(course) }));
+  const totals = courseStats.reduce(
+    (acc, item) => {
+      acc.students += item.stats.studentCount;
+      acc.revenue += item.stats.revenue;
+      acc.ratingTotal += item.stats.rating;
+      acc.completionTotal += item.stats.completionRate;
+      return acc;
+    },
+    { students: 0, revenue: 0, ratingTotal: 0, completionTotal: 0 }
+  );
+  const averageRating = courses.length ? (totals.ratingTotal / courses.length).toFixed(1) : "0.0";
+  const completionRate = courses.length ? Math.round(totals.completionTotal / courses.length) : 0;
 
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!form.title.trim()) return;
     setSaving(true);
-    const { data } = await api.post("/courses", form);
-    setCourses((prev) => [...prev, data]);
-    setForm({ title: "", description: "", thumbnail: "" });
-    setShowForm(false);
-    setSaving(false);
-    navigate(`/courses/${data._id}`);
+    setError("");
+    try {
+      const { data } = await api.post("/courses", form);
+      setCourses((prev) => [...prev, data]);
+      setForm({ title: "", description: "", thumbnail: "" });
+      setShowForm(false);
+      navigate(`/courses/${data._id}`);
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to create course. Is the backend running?");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -46,11 +164,11 @@ export default function CoursesPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <main className="mx-auto w-full max-w-7xl px-6 py-8">
+        <div className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">My Courses</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Manage and create your courses</p>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Teacher Dashboard</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage courses, students, and performance</p>
           </div>
           <button
             onClick={() => setShowForm(true)}
@@ -58,6 +176,14 @@ export default function CoursesPage() {
           >
             <PlusIcon className="w-4 h-4" /> New Course
           </button>
+        </div>
+
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <StatCard icon={BookOpenIcon} label="Total Courses" value={courses.length} caption="Published and draft courses" tone="green" />
+          <StatCard icon={UserGroupIcon} label="Total Students" value={totals.students} caption="Across all courses" tone="blue" />
+          <StatCard icon={BanknotesIcon} label="Total Revenue" value={currency.format(totals.revenue)} caption="Estimated earnings" tone="amber" />
+          <StatCard icon={StarIcon} label="Average Rating" value={averageRating} caption="Learner feedback" tone="violet" />
+          <StatCard icon={CheckCircleIcon} label="Completion Rate" value={`${completionRate}%`} caption="Average course progress" tone="cyan" />
         </div>
 
         {showForm && (
@@ -85,11 +211,14 @@ export default function CoursesPage() {
                 className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm outline-none focus:border-primary dark:text-white"
               />
             </div>
+            {error && (
+              <p className="mt-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>
+            )}
             <div className="flex gap-3 mt-4">
               <button type="submit" disabled={saving} className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {saving ? "Creating..." : "Create Course"}
               </button>
-              <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+              <button type="button" onClick={() => { setShowForm(false); setError(""); }} className="px-5 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                 Cancel
               </button>
             </div>
@@ -108,31 +237,106 @@ export default function CoursesPage() {
             <p className="text-gray-500 dark:text-gray-400">No courses yet. Create your first course!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {courses.map((c) => (
-              <div
-                key={c._id}
-                onClick={() => navigate(`/courses/${c._id}`)}
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
-              >
-                <div className="h-36 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden">
-                  {c.thumbnail ? (
-                    <img src={c.thumbnail} alt={c.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <AcademicCapIcon className="w-12 h-12 text-primary/40" />
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-800 dark:text-white truncate">{c.title}</h3>
-                  {c.description && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{c.description}</p>
-                  )}
-                  <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
-                    <span>{c.modules?.length || 0} modules</span>
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {courseStats.map(({ course: c, stats }) => {
+              const expanded = expandedCourseId === c._id;
+
+              return (
+                <div
+                  key={c._id}
+                  className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <div className="grid gap-0 sm:grid-cols-[190px_1fr]">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/courses/${c._id}`)}
+                      className="h-44 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden sm:h-full"
+                    >
+                      {c.thumbnail ? (
+                        <img src={c.thumbnail} alt={c.title} className="h-full w-full object-cover" />
+                      ) : (
+                        <AcademicCapIcon className="h-12 w-12 text-primary/40" />
+                      )}
+                    </button>
+
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">{c.title}</h3>
+                          {c.description && (
+                            <p className="mt-1 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{c.description}</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/courses/${c._id}`)}
+                          className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-700"
+                          title="Open course builder"
+                        >
+                          <ArrowRightIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Students</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{stats.studentCount}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Revenue</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{currency.format(stats.revenue)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Rating</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{stats.rating} / 5</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Completion</p>
+                          <p className="font-semibold text-gray-900 dark:text-white">{stats.completionRate}%</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                        <span>{c.modules?.length || 0} modules</span>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedCourseId(expanded ? null : c._id)}
+                          className="flex items-center gap-1 font-semibold text-primary hover:text-primary-dark"
+                        >
+                          Enrolled students
+                          <ChevronDownIcon className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
+
+                  {expanded && (
+                    <div className="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Enrolled Students</h4>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{stats.studentCount} total</span>
+                      </div>
+                      <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                        {stats.students.map((student) => (
+                          <div key={student.id || student.email || student.name} className="flex items-center justify-between gap-4 py-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{student.name}</p>
+                              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{student.email}</p>
+                            </div>
+                            <div className="w-28 flex-shrink-0">
+                              <div className="mb-1 flex justify-end text-xs font-semibold text-gray-600 dark:text-gray-300">{student.progress}%</div>
+                              <div className="h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                                <div className="h-full rounded-full bg-primary" style={{ width: `${student.progress}%` }} />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

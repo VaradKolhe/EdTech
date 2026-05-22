@@ -3,19 +3,13 @@
 @tailwind utilities;
 
 @layer base {
+  html, body, #root {
+    @apply h-full;
+  }
   body {
     @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
   }
 }
-
-/* React Quill overrides */
-.ql-toolbar { @apply rounded-t-lg border-gray-200 dark:border-gray-600 !important; }
-.ql-container { @apply rounded-b-lg border-gray-200 dark:border-gray-600 min-h-[160px] !important; }
-.dark .ql-toolbar, .dark .ql-container { @apply bg-gray-800 text-gray-100 border-gray-600 !important; }
-.dark .ql-editor { @apply text-gray-100 !important; }
-.dark .ql-stroke { stroke: #d1d5db !important; }
-.dark .ql-fill { fill: #d1d5db !important; }
-.dark .ql-picker-label { @apply text-gray-300 !important; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }

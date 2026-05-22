@@ -1,177 +1,390 @@
-import { useState, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
-import { saveContent, saveQuiz, updateSubmodule } from "../store/courseSlice";
-import { PlusIcon, TrashIcon, SpeakerWaveIcon } from "@heroicons/react/24/outline";
+import { saveBlocks, updateSubmodule } from "../store/courseSlice";
+import {
+  PlusIcon, TrashIcon, ChevronUpIcon, ChevronDownIcon,
+  SpeakerWaveIcon, EyeIcon, EyeSlashIcon, CheckIcon,
+} from "@heroicons/react/24/outline";
 
-function VideoBlock({ url }) {
-  const videoId = url.match(/(?:v=|youtu\.be\/)([^&\s]+)/)?.[1];
-  if (!videoId) return <p className="text-sm text-red-400">Invalid YouTube URL</p>;
+const LANGS = ["en", "hi", "mr"];
+const LANG_LABEL = { en: "EN", hi: "HI", mr: "MR" };
+const EMPTY_BLOCKS = [];
+
+const hydrateBlocks = (blocks) =>
+  blocks.map((b, i) => ({ ...b, _tempId: b._id || `tmp-${i}` }));
+
+const newBlock = (type, order) => ({
+  _tempId: Math.random().toString(36).slice(2),
+  type,
+  order,
+  content: { en: "", hi: "", mr: "" },
+  videoUrl: "",
+  videoTitle: { en: "", hi: "", mr: "" },
+  videoDuration: "",
+  quizQuestions: [],
+});
+
+const newQuestion = () => ({
+  _tempId: Math.random().toString(36).slice(2),
+  question: { en: "", hi: "", mr: "" },
+  options: ["", "", "", ""],
+  correctAnswer: "",
+});
+
+/* ── Rich text editor ───────────────────────────────────── */
+function RichTextEditor({ value, onChange }) {
+  const editorRef = useRef(null);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (editor && editor.innerHTML !== value) editor.innerHTML = value || "";
+  }, [value]);
+
+  const emitChange = () => onChange(editorRef.current?.innerHTML || "");
+
+  const runCommand = (command, arg = null) => {
+    document.execCommand(command, false, arg);
+    editorRef.current?.focus();
+    emitChange();
+  };
+
   return (
-    <div className="aspect-video rounded-xl overflow-hidden shadow-md">
-      <iframe
-        src={`https://www.youtube.com/embed/${videoId}`}
-        className="w-full h-full"
-        allowFullScreen
-        title="video"
+    <div className="rounded-lg border border-white/10 overflow-hidden bg-white/[0.03]">
+      <div className="flex items-center gap-1 border-b border-white/10 bg-white/5 px-2 py-1.5">
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => runCommand("bold")} className="w-8 h-8 rounded-md text-sm font-bold text-gray-300 hover:bg-white/10 hover:text-white transition-colors" title="Bold">
+          B
+        </button>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => runCommand("italic")} className="w-8 h-8 rounded-md text-sm italic text-gray-300 hover:bg-white/10 hover:text-white transition-colors" title="Italic">
+          I
+        </button>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => runCommand("insertUnorderedList")} className="w-8 h-8 rounded-md text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" title="Bullet list">
+          •
+        </button>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => runCommand("formatBlock", "h2")} className="h-8 px-2 rounded-md text-xs font-semibold text-gray-300 hover:bg-white/10 hover:text-white transition-colors" title="Heading">
+          H2
+        </button>
+        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => runCommand("formatBlock", "p")} className="h-8 px-2 rounded-md text-xs font-semibold text-gray-300 hover:bg-white/10 hover:text-white transition-colors" title="Paragraph">
+          P
+        </button>
+      </div>
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={emitChange}
+        onBlur={emitChange}
+        className="min-h-[180px] px-4 py-3 text-sm leading-6 text-gray-100 outline-none prose prose-invert prose-sm max-w-none empty:before:content-[attr(data-placeholder)] empty:before:text-gray-500"
+        data-placeholder="Write lesson content here..."
       />
     </div>
   );
 }
 
-function QuizBlock({ quiz }) {
-  const [selected, setSelected] = useState(null);
+/* ── Lang tabs ───────────────────────────────────────────── */
+function LangTabs({ active, onChange }) {
   return (
-    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-4">
-      <p className="font-semibold text-gray-800 dark:text-gray-100 mb-3">{quiz.question}</p>
-      <div className="space-y-2">
-        {quiz.options.map((opt, i) => (
-          <button
-            key={i}
-            onClick={() => setSelected(opt)}
-            className={`w-full text-left px-4 py-2 rounded-lg text-sm border transition-colors ${
-              selected === opt
-                ? opt === quiz.correctAnswer
-                  ? "bg-green-100 border-green-400 text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                  : "bg-red-100 border-red-400 text-red-800 dark:bg-red-900/40 dark:text-red-300"
-                : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-primary"
-            }`}
-          >
-            {opt}
-          </button>
-        ))}
+    <div className="flex gap-1">
+      {LANGS.map((l) => (
+        <button
+          key={l}
+          onClick={(e) => { e.stopPropagation(); onChange(l); }}
+          className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${
+            active === l ? "bg-primary text-white" : "bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white"
+          }`}
+        >
+          {LANG_LABEL[l]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ── YouTube embed ───────────────────────────────────────── */
+function VideoEmbed({ url }) {
+  const id = url?.match(/(?:v=|youtu\.be\/)([^&\s]+)/)?.[1];
+  if (!id) return null;
+  return (
+    <div className="w-full aspect-video rounded-lg overflow-hidden bg-black mt-3">
+      <iframe src={`https://www.youtube.com/embed/${id}`} className="w-full h-full" allowFullScreen title="preview" />
+    </div>
+  );
+}
+
+/* ── Block header row (shared) ───────────────────────────── */
+function BlockHeader({ label, color, lang, onLangChange, extra, onMoveUp, onMoveDown, onDelete, isFirst, isLast }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border-b border-white/10">
+      <span className={`text-xs font-bold uppercase tracking-wider ${color}`}>{label}</span>
+      <div className="ml-auto flex items-center gap-1">
+        <LangTabs active={lang} onChange={onLangChange} />
+        {extra}
+        <button onClick={onMoveUp} disabled={isFirst} className="p-1.5 text-gray-600 hover:text-gray-300 disabled:opacity-20 transition-colors">
+          <ChevronUpIcon className="w-3.5 h-3.5" />
+        </button>
+        <button onClick={onMoveDown} disabled={isLast} className="p-1.5 text-gray-600 hover:text-gray-300 disabled:opacity-20 transition-colors">
+          <ChevronDownIcon className="w-3.5 h-3.5" />
+        </button>
+        <button onClick={onDelete} className="p-1.5 text-gray-600 hover:text-red-400 transition-colors">
+          <TrashIcon className="w-3.5 h-3.5" />
+        </button>
       </div>
-      {selected && (
-        <p className={`mt-2 text-sm font-medium ${selected === quiz.correctAnswer ? "text-green-600" : "text-red-500"}`}>
-          {selected === quiz.correctAnswer ? "✓ Correct!" : `✗ Correct answer: ${quiz.correctAnswer}`}
-        </p>
+    </div>
+  );
+}
+
+/* ── TEXT block ──────────────────────────────────────────── */
+function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  const speak = () => {
+    const text = (block.content[lang] || "").replace(/<[^>]+>/g, "");
+    if (!text) return;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  };
+
+  return (
+    <div className="bg-[#141820] border border-white/10 rounded-xl overflow-hidden">
+      <BlockHeader
+        label="📝 Text" color="text-blue-400"
+        lang={lang} onLangChange={onLangChange}
+        isFirst={isFirst} isLast={isLast}
+        onMoveUp={onMoveUp} onMoveDown={onMoveDown} onDelete={onDelete}
+        extra={
+          <>
+            <button onClick={speak} className="p-1.5 text-gray-500 hover:text-primary transition-colors" title="Read aloud">
+              <SpeakerWaveIcon className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setCollapsed((c) => !c)} className="p-1.5 text-gray-500 hover:text-gray-300 transition-colors">
+              {collapsed ? <ChevronDownIcon className="w-3.5 h-3.5" /> : <ChevronUpIcon className="w-3.5 h-3.5" />}
+            </button>
+          </>
+        }
+      />
+      {!collapsed && (
+        <div className="p-4">
+          <RichTextEditor
+            value={block.content[lang] || ""}
+            onChange={(val) => onChange({ content: { ...block.content, [lang]: val } })}
+          />
+        </div>
       )}
     </div>
   );
 }
 
-function AddContentForm({ submoduleId, onClose }) {
-  const dispatch = useDispatch();
-  const [type, setType] = useState("text");
-  const [value, setValue] = useState("");
-
-  const handleSave = () => {
-    if (!value.trim()) return;
-    dispatch(saveContent({ submoduleId, type, value }));
-    onClose();
-  };
-
+/* ── VIDEO block ─────────────────────────────────────────── */
+function VideoBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
+  const [preview, setPreview] = useState(false);
   return (
-    <div className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-800">
-      <div className="flex gap-2 mb-3">
-        {["text", "video"].map((t) => (
-          <button
-            key={t}
-            onClick={() => setType(t)}
-            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-              type === t ? "bg-primary text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-            }`}
-          >
-            {t === "text" ? "📝 Text" : "🎬 Video"}
+    <div className="bg-[#141820] border border-white/10 rounded-xl overflow-hidden">
+      <BlockHeader
+        label="🎬 Video" color="text-purple-400"
+        lang={lang} onLangChange={onLangChange}
+        isFirst={isFirst} isLast={isLast}
+        onMoveUp={onMoveUp} onMoveDown={onMoveDown} onDelete={onDelete}
+        extra={
+          <button onClick={() => setPreview((p) => !p)} className="p-1.5 text-gray-500 hover:text-primary transition-colors" title="Toggle preview">
+            {preview ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
           </button>
-        ))}
-      </div>
-      {type === "text" ? (
-        <ReactQuill theme="snow" value={value} onChange={setValue} className="mb-3" />
-      ) : (
+        }
+      />
+      <div className="p-4 space-y-3">
         <input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="https://www.youtube.com/watch?v=..."
-          className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm mb-3 outline-none focus:border-primary"
+          value={block.videoTitle[lang] || ""}
+          onChange={(e) => onChange({ videoTitle: { ...block.videoTitle, [lang]: e.target.value } })}
+          placeholder={`Video title (${LANG_LABEL[lang]})...`}
+          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 outline-none focus:border-primary"
         />
-      )}
-      <div className="flex gap-2">
-        <button onClick={handleSave} className="px-4 py-1.5 bg-primary text-white rounded-lg text-sm hover:bg-primary-dark transition-colors">
-          Save
-        </button>
-        <button onClick={onClose} className="px-4 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-          Cancel
-        </button>
+        <div className="flex gap-2">
+          <input
+            value={block.videoUrl || ""}
+            onChange={(e) => onChange({ videoUrl: e.target.value })}
+            placeholder="YouTube or S3 URL..."
+            className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 outline-none focus:border-primary"
+          />
+          <input
+            value={block.videoDuration || ""}
+            onChange={(e) => onChange({ videoDuration: e.target.value })}
+            placeholder="Duration"
+            className="w-28 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 outline-none focus:border-primary"
+          />
+        </div>
+        {preview && block.videoUrl && <VideoEmbed url={block.videoUrl} />}
       </div>
     </div>
   );
 }
 
-function AddQuizForm({ submoduleId, onClose }) {
-  const dispatch = useDispatch();
-  const [question, setQuestion] = useState("");
-  const [options, setOptions] = useState(["", "", "", ""]);
-  const [correctAnswer, setCorrectAnswer] = useState("");
+/* ── QUIZ block ──────────────────────────────────────────── */
+function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
+  const [preview, setPreview] = useState(false);
+  const [answers, setAnswers] = useState({});
 
-  const handleSave = () => {
-    const filtered = options.filter((o) => o.trim());
-    if (!question.trim() || filtered.length < 2 || !correctAnswer) return;
-    dispatch(saveQuiz({ submoduleId, question, options: filtered, correctAnswer }));
-    onClose();
-  };
+  const updateQuestion = (qi, patch) =>
+    onChange({ quizQuestions: block.quizQuestions.map((q, i) => i === qi ? { ...q, ...patch } : q) });
+
+  const updateOption = (qi, oi, val) =>
+    onChange({
+      quizQuestions: block.quizQuestions.map((q, i) => {
+        if (i !== qi) return q;
+        return { ...q, options: q.options.map((o, j) => j === oi ? val : o) };
+      }),
+    });
+
+  const addQuestion = () => onChange({ quizQuestions: [...(block.quizQuestions || []), newQuestion()] });
+  const removeQuestion = (qi) => onChange({ quizQuestions: block.quizQuestions.filter((_, i) => i !== qi) });
 
   return (
-    <div className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-800 space-y-3">
-      <h4 className="font-semibold text-gray-700 dark:text-gray-200">New Quiz Question</h4>
-      <input
-        value={question}
-        onChange={(e) => setQuestion(e.target.value)}
-        placeholder="Question..."
-        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm outline-none focus:border-primary"
+    <div className="bg-[#141820] border border-white/10 rounded-xl overflow-hidden">
+      <BlockHeader
+        label={`🧠 Quiz · ${block.quizQuestions?.length || 0} questions`} color="text-yellow-400"
+        lang={lang} onLangChange={onLangChange}
+        isFirst={isFirst} isLast={isLast}
+        onMoveUp={onMoveUp} onMoveDown={onMoveDown} onDelete={onDelete}
+        extra={
+          <button onClick={() => { setPreview((p) => !p); setAnswers({}); }} className="p-1.5 text-gray-500 hover:text-primary transition-colors" title="Preview">
+            {preview ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
+          </button>
+        }
       />
-      <div className="space-y-2">
-        {options.map((opt, i) => (
-          <div key={i} className="flex gap-2 items-center">
-            <input
-              value={opt}
-              onChange={(e) => setOptions((prev) => prev.map((o, j) => (j === i ? e.target.value : o)))}
-              placeholder={`Option ${i + 1}`}
-              className="flex-1 px-3 py-1.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm outline-none focus:border-primary"
-            />
-            <input
-              type="radio"
-              name="correct"
-              checked={correctAnswer === opt && opt !== ""}
-              onChange={() => setCorrectAnswer(opt)}
-              className="accent-primary w-4 h-4"
-              title="Mark as correct"
-            />
-          </div>
-        ))}
-      </div>
-      <p className="text-xs text-gray-400">Select the radio button next to the correct answer</p>
-      <div className="flex gap-2">
-        <button onClick={handleSave} className="px-4 py-1.5 bg-primary text-white rounded-lg text-sm hover:bg-primary-dark transition-colors">
-          Save Quiz
-        </button>
-        <button onClick={onClose} className="px-4 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-          Cancel
-        </button>
+      <div className="p-4 space-y-4">
+        {preview ? (
+          (block.quizQuestions || []).map((q, qi) => (
+            <div key={qi} className="bg-white/5 rounded-lg p-4">
+              <p className="font-semibold text-white mb-3">{q.question[lang] || q.question.en || `Question ${qi + 1}`}</p>
+              <div className="space-y-2">
+                {q.options.filter(Boolean).map((opt, oi) => {
+                  const sel = answers[qi];
+                  let cls = "w-full text-left px-4 py-2 rounded-lg text-sm border transition-all ";
+                  if (!sel) cls += "border-white/10 text-gray-300 hover:border-primary hover:bg-primary/10";
+                  else if (sel === opt && opt === q.correctAnswer) cls += "border-green-500 bg-green-500/20 text-green-300";
+                  else if (sel === opt) cls += "border-red-500 bg-red-500/20 text-red-300";
+                  else if (opt === q.correctAnswer) cls += "border-green-500/50 bg-green-500/10 text-green-400";
+                  else cls += "border-white/5 text-gray-500 opacity-60";
+                  return <button key={oi} onClick={() => !sel && setAnswers((a) => ({ ...a, [qi]: opt }))} className={cls}>{opt}</button>;
+                })}
+              </div>
+              {answers[qi] && (
+                <p className={`text-xs font-semibold mt-2 ${answers[qi] === q.correctAnswer ? "text-green-400" : "text-red-400"}`}>
+                  {answers[qi] === q.correctAnswer ? "✓ Correct!" : `✗ Correct: ${q.correctAnswer}`}
+                </p>
+              )}
+            </div>
+          ))
+        ) : (
+          <>
+            {(block.quizQuestions || []).map((q, qi) => (
+              <div key={q._tempId || qi} className="bg-white/5 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-400">Q{qi + 1}</span>
+                  <button onClick={() => removeQuestion(qi)} className="text-gray-600 hover:text-red-400 transition-colors">
+                    <TrashIcon className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <input
+                  value={q.question[lang] || ""}
+                  onChange={(e) => updateQuestion(qi, { question: { ...q.question, [lang]: e.target.value } })}
+                  placeholder={`Question (${LANG_LABEL[lang]})...`}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 outline-none focus:border-primary"
+                />
+                <div className="space-y-2">
+                  {q.options.map((opt, oi) => (
+                    <div key={oi} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name={`correct-${block._tempId || block._id}-${qi}`}
+                        checked={q.correctAnswer === opt && opt !== ""}
+                        onChange={() => updateQuestion(qi, { correctAnswer: opt })}
+                        className="accent-primary w-4 h-4 flex-shrink-0"
+                      />
+                      <input
+                        value={opt}
+                        onChange={(e) => {
+                          updateOption(qi, oi, e.target.value);
+                          if (q.correctAnswer === opt) updateQuestion(qi, { correctAnswer: e.target.value });
+                        }}
+                        placeholder={`Option ${oi + 1}`}
+                        className="flex-1 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-500 outline-none focus:border-primary"
+                      />
+                    </div>
+                  ))}
+                </div>
+                {q.correctAnswer && <p className="text-xs text-green-400">✓ Correct: {q.correctAnswer}</p>}
+              </div>
+            ))}
+            <button
+              onClick={addQuestion}
+              className="flex items-center gap-2 w-full px-4 py-2.5 border border-dashed border-white/20 rounded-lg text-sm text-gray-400 hover:border-primary hover:text-primary transition-colors justify-center"
+            >
+              <PlusIcon className="w-4 h-4" /> Add Question
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
+/* ── Main ContentEditor ──────────────────────────────────── */
 export default function ContentEditor() {
   const dispatch = useDispatch();
   const { activeSubmoduleId, submoduleContents, contentLoading, course } = useSelector((s) => s.course);
-  const [showContentForm, setShowContentForm] = useState(false);
-  const [showQuizForm, setShowQuizForm] = useState(false);
+  const [lang, setLang] = useState("en");
+  const [draft, setDraft] = useState({ submoduleId: null, sourceBlocks: EMPTY_BLOCKS, blocks: [] });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState("");
 
-  const activeSubmodule = course?.modules
-    ?.flatMap((m) => m.submodules)
-    ?.find((sm) => sm._id === activeSubmoduleId);
-
   const contentData = submoduleContents[activeSubmoduleId];
+  const sourceBlocks = contentData?.blocks ?? EMPTY_BLOCKS;
+  const activeSubmodule = course?.modules?.flatMap((m) => m.submodules)?.find((sm) => sm._id === activeSubmoduleId);
+  let blocks = draft.blocks;
 
-  const handleSpeak = (text) => {
-    const stripped = text.replace(/<[^>]+>/g, "");
-    const utterance = new SpeechSynthesisUtterance(stripped);
-    window.speechSynthesis.speak(utterance);
+  if (draft.submoduleId !== activeSubmoduleId || draft.sourceBlocks !== sourceBlocks) {
+    blocks = hydrateBlocks(sourceBlocks);
+    setDraft({ submoduleId: activeSubmoduleId, sourceBlocks, blocks });
+    if (editingTitle) setEditingTitle(false);
+  }
+
+  const setBlocks = useCallback((updater) => {
+    setDraft((prev) => ({
+      ...prev,
+      blocks: typeof updater === "function" ? updater(prev.blocks) : updater,
+    }));
+  }, []);
+
+  const addBlock = (type) =>
+    setBlocks((prev) => [...prev, newBlock(type, prev.length)]);
+
+  const updateBlock = useCallback((tempId, patch) =>
+    setBlocks((prev) => prev.map((b) => b._tempId === tempId ? { ...b, ...patch } : b)), [setBlocks]);
+
+  const deleteBlock = (tempId) =>
+    setBlocks((prev) => prev.filter((b) => b._tempId !== tempId));
+
+  const moveBlock = (tempId, dir) =>
+    setBlocks((prev) => {
+      const idx = prev.findIndex((b) => b._tempId === tempId);
+      const swap = idx + dir;
+      if (idx < 0 || swap < 0 || swap >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[swap]] = [next[swap], next[idx]];
+      return next.map((b, i) => ({ ...b, order: i }));
+    });
+
+  const handleSave = async () => {
+    setSaving(true);
+    const clean = blocks.map((block, i) => {
+      const rest = { ...block, order: i };
+      delete rest._tempId;
+      return rest;
+    });
+    await dispatch(saveBlocks({ id: activeSubmoduleId, blocks: clean }));
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   const handleRenameSubmodule = () => {
@@ -180,15 +393,16 @@ export default function ContentEditor() {
     setEditingTitle(false);
   };
 
+  /* No submodule selected */
   if (!activeSubmoduleId) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+      <div className="flex-1 flex flex-col items-center justify-center h-full bg-[#0e1117]">
+        <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-5">
           <span className="text-4xl">📚</span>
         </div>
-        <h2 className="text-xl font-semibold text-gray-600 dark:text-gray-300 mb-2">Select a Submodule</h2>
-        <p className="text-gray-400 text-sm max-w-xs">
-          Choose a submodule from the sidebar to view and edit its content.
+        <h2 className="text-xl font-bold text-gray-200 mb-2">Select a Submodule</h2>
+        <p className="text-gray-500 text-sm text-center max-w-xs">
+          Pick a submodule from the left sidebar to start building your lesson.
         </p>
       </div>
     );
@@ -196,28 +410,64 @@ export default function ContentEditor() {
 
   if (contentLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-[#0e1117]">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
+  const sharedBlockProps = (block, idx) => ({
+    lang,
+    onLangChange: setLang,
+    onChange: (p) => updateBlock(block._tempId, p),
+    onDelete: () => deleteBlock(block._tempId),
+    onMoveUp: () => moveBlock(block._tempId, -1),
+    onMoveDown: () => moveBlock(block._tempId, 1),
+    isFirst: idx === 0,
+    isLast: idx === blocks.length - 1,
+  });
+
   return (
-    <div className="flex-1 overflow-y-auto p-6 max-w-4xl mx-auto w-full">
-      {/* Header */}
-      <div className="mb-6 flex items-center gap-3">
+    <div className="flex flex-col h-full bg-[#0e1117]">
+
+      {/* ── Sticky top toolbar ── */}
+      <div className="flex-shrink-0 bg-[#141820] border-b border-white/10 px-6 py-2.5 flex items-center gap-2 flex-wrap">
+        <button onClick={() => addBlock("TEXT")} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-semibold hover:bg-blue-600/30 transition-colors">
+          <PlusIcon className="w-3.5 h-3.5" /> Add Text
+        </button>
+        <button onClick={() => addBlock("VIDEO")} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-xs font-semibold hover:bg-purple-600/30 transition-colors">
+          <PlusIcon className="w-3.5 h-3.5" /> Add Video
+        </button>
+        <button onClick={() => addBlock("QUIZ")} className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-xs font-semibold hover:bg-yellow-600/30 transition-colors">
+          <PlusIcon className="w-3.5 h-3.5" /> Add Quiz
+        </button>
+        <div className="ml-auto flex items-center gap-3">
+          <LangTabs active={lang} onChange={setLang} />
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60"
+          >
+            {saving ? <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckIcon className="w-3.5 h-3.5" />}
+            {saving ? "Saving..." : "Save Lesson"}
+          </button>
+          {saved && <span className="text-xs text-green-400 font-semibold">✓ Saved!</span>}
+        </div>
+      </div>
+
+      {/* ── Lesson title ── */}
+      <div className="flex-shrink-0 bg-[#141820] border-b border-white/10 px-6 py-3">
         {editingTitle ? (
           <input
-            autoFocus
-            value={titleVal}
+            autoFocus value={titleVal}
             onChange={(e) => setTitleVal(e.target.value)}
             onBlur={handleRenameSubmodule}
             onKeyDown={(e) => e.key === "Enter" && handleRenameSubmodule()}
-            className="text-2xl font-bold bg-transparent border-b-2 border-primary outline-none flex-1 dark:text-white"
+            className="text-xl font-bold bg-transparent border-b-2 border-primary outline-none w-full text-white"
           />
         ) : (
           <h1
-            className="text-2xl font-bold text-gray-800 dark:text-white cursor-pointer hover:text-primary transition-colors"
+            className="text-xl font-bold text-white cursor-pointer hover:text-primary transition-colors"
             onClick={() => { setEditingTitle(true); setTitleVal(activeSubmodule?.title || ""); }}
             title="Click to rename"
           >
@@ -226,69 +476,39 @@ export default function ContentEditor() {
         )}
       </div>
 
-      {/* Content blocks */}
-      <div className="space-y-4 mb-6">
-        {contentData?.contents?.map((c, i) => (
-          <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                {c.type === "text" ? "📝 Text" : "🎬 Video"}
-              </span>
-              {c.type === "text" && (
-                <button
-                  onClick={() => handleSpeak(c.value)}
-                  className="text-gray-400 hover:text-primary transition-colors"
-                  title="Text to Speech"
-                >
-                  <SpeakerWaveIcon className="w-4 h-4" />
-                </button>
-              )}
+      {/* ── Blocks area ── */}
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        {blocks.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full min-h-[360px] text-center">
+            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4 border border-white/10">
+              <span className="text-3xl">✏️</span>
             </div>
-            {c.type === "text" ? (
-              <div className="prose dark:prose-invert max-w-none text-sm" dangerouslySetInnerHTML={{ __html: c.value }} />
-            ) : (
-              <VideoBlock url={c.value} />
-            )}
+            <h3 className="text-lg font-bold text-gray-300 mb-2">Start building this lesson</h3>
+            <p className="text-gray-500 text-sm mb-6 max-w-xs">Add text, video, or quiz blocks to create a complete learning experience.</p>
+            <div className="flex gap-3 flex-wrap justify-center">
+              <button onClick={() => addBlock("TEXT")} className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-sm font-semibold hover:bg-blue-600/30 transition-colors">
+                <PlusIcon className="w-4 h-4" /> Add Text
+              </button>
+              <button onClick={() => addBlock("VIDEO")} className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-sm font-semibold hover:bg-purple-600/30 transition-colors">
+                <PlusIcon className="w-4 h-4" /> Add Video
+              </button>
+              <button onClick={() => addBlock("QUIZ")} className="flex items-center gap-2 px-4 py-2 bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 rounded-lg text-sm font-semibold hover:bg-yellow-600/30 transition-colors">
+                <PlusIcon className="w-4 h-4" /> Add Quiz
+              </button>
+            </div>
           </div>
-        ))}
-
-        {contentData?.quizzes?.map((q, i) => (
-          <div key={i} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 block mb-2">🧠 Quiz</span>
-            <QuizBlock quiz={q} />
+        ) : (
+          <div className="space-y-4 max-w-4xl">
+            {blocks.map((block, idx) => {
+              const props = { key: block._tempId, block, ...sharedBlockProps(block, idx) };
+              if (block.type === "TEXT") return <TextBlock {...props} />;
+              if (block.type === "VIDEO") return <VideoBlock {...props} />;
+              if (block.type === "QUIZ") return <QuizBlock {...props} />;
+              return null;
+            })}
           </div>
-        ))}
+        )}
       </div>
-
-      {/* Add forms */}
-      {showContentForm && (
-        <div className="mb-4">
-          <AddContentForm submoduleId={activeSubmoduleId} onClose={() => setShowContentForm(false)} />
-        </div>
-      )}
-      {showQuizForm && (
-        <div className="mb-4">
-          <AddQuizForm submoduleId={activeSubmoduleId} onClose={() => setShowQuizForm(false)} />
-        </div>
-      )}
-
-      {/* Action buttons */}
-      {!showContentForm && !showQuizForm && (
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => setShowContentForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors shadow-sm"
-          >
-            <PlusIcon className="w-4 h-4" /> Add Content
-          </button>
-          <button
-            onClick={() => setShowQuizForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
-          >
-            <PlusIcon className="w-4 h-4" /> Add Quiz
-          </button>
-        </div>
-      )}
     </div>
   );
 }
