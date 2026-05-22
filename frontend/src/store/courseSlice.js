@@ -41,6 +41,11 @@ export const fetchSubmoduleContent = createAsyncThunk("course/fetchContent", asy
   return { id, ...data };
 });
 
+export const saveBlocks = createAsyncThunk("course/saveBlocks", async ({ id, blocks }) => {
+  const { data } = await api.put(`/submodules/${id}/blocks`, { blocks });
+  return data;
+});
+
 export const saveContent = createAsyncThunk("course/saveContent", async (payload) => {
   const { data } = await api.post("/submodules/content", payload);
   return data;
@@ -101,15 +106,22 @@ const courseSlice = createSlice({
       .addCase(fetchSubmoduleContent.pending, (s) => { s.contentLoading = true; })
       .addCase(fetchSubmoduleContent.fulfilled, (s, a) => {
         s.contentLoading = false;
-        s.submoduleContents[a.payload.id] = { contents: a.payload.contents, quizzes: a.payload.quizzes };
+        s.submoduleContents[a.payload.id] = {
+          contents: a.payload.contents,
+          quizzes: a.payload.quizzes,
+          blocks: a.payload.blocks || [],
+        };
       })
       .addCase(fetchSubmoduleContent.rejected, (s) => { s.contentLoading = false; })
 
       .addCase(saveContent.fulfilled, (s, a) => {
-        s.submoduleContents[a.payload._id] = { contents: a.payload.contents, quizzes: a.payload.quizzes };
+        s.submoduleContents[a.payload._id] = { contents: a.payload.contents, quizzes: a.payload.quizzes, blocks: a.payload.blocks || [] };
       })
       .addCase(saveQuiz.fulfilled, (s, a) => {
-        s.submoduleContents[a.payload._id] = { contents: a.payload.contents, quizzes: a.payload.quizzes };
+        s.submoduleContents[a.payload._id] = { contents: a.payload.contents, quizzes: a.payload.quizzes, blocks: a.payload.blocks || [] };
+      })
+      .addCase(saveBlocks.fulfilled, (s, a) => {
+        s.submoduleContents[a.payload._id] = { contents: a.payload.contents, quizzes: a.payload.quizzes, blocks: a.payload.blocks || [] };
       });
   },
 });

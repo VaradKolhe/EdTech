@@ -36,7 +36,7 @@ exports.getSubmoduleContent = async (req, res) => {
   try {
     const submodule = await Submodule.findById(req.params.id);
     if (!submodule) return res.status(404).json({ error: "Submodule not found" });
-    res.json({ contents: submodule.contents, quizzes: submodule.quizzes });
+    res.json({ contents: submodule.contents, quizzes: submodule.quizzes, blocks: submodule.blocks || [] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -48,6 +48,20 @@ exports.addContent = async (req, res) => {
     const submodule = await Submodule.findByIdAndUpdate(
       submoduleId,
       { $push: { contents: { type, value } } },
+      { new: true }
+    );
+    res.json(submodule);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+exports.saveBlocks = async (req, res) => {
+  try {
+    const { blocks } = req.body;
+    const submodule = await Submodule.findByIdAndUpdate(
+      req.params.id,
+      { $set: { blocks } },
       { new: true }
     );
     res.json(submodule);

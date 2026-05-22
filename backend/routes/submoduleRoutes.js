@@ -7,12 +7,14 @@ const {
   getSubmoduleContent,
   addContent,
   addQuiz,
+  saveBlocks,
 } = require("../controllers/submoduleController");
 
 router.post("/", createSubmodule);
 router.put("/:id", updateSubmodule);
 router.delete("/:id", deleteSubmodule);
 router.get("/:id/content", getSubmoduleContent);
+router.put("/:id/blocks", saveBlocks);
 router.post("/content", addContent);
 router.post("/quiz", addQuiz);
 
