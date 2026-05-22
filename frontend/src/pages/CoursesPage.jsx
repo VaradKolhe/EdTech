@@ -144,7 +144,11 @@ export default function CoursesPage() {
       setShowForm(false);
       navigate(`/teacher-dashboard/courses/${data._id}`);
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to create course. Is the backend running?");
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to create course. Is the backend running?"
+      );
     } finally {
       setSaving(false);
     }
