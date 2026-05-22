@@ -46,6 +46,15 @@ const userSchema = new mongoose.Schema(
       enum: VERIFICATION_STATUSES,
       default: "pending",
     },
+    enrolledCourseCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
