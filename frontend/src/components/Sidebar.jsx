@@ -42,14 +42,14 @@ function ModuleItem({ mod }) {
     <div className="mb-0.5">
       {/* Module header */}
       <div
-        className="flex items-center gap-2 px-4 py-2.5 cursor-pointer group hover:bg-white/5 transition-colors"
+        className="group flex cursor-pointer items-center gap-2 px-5 py-3 transition-colors hover:bg-white/5"
         onClick={() => setOpen((o) => !o)}
       >
         {open
-          ? <ChevronDownIcon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-          : <ChevronRightIcon className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+          ? <ChevronDownIcon className="h-4 w-4 flex-shrink-0 text-primary" />
+          : <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-gray-500" />
         }
-        <span className="text-xs font-bold text-primary mr-1">{mod.moduleNumber}.</span>
+        <span className="mr-1 text-sm font-bold text-primary">{mod.moduleNumber}.</span>
         {editing ? (
           <input
             autoFocus
@@ -58,10 +58,10 @@ function ModuleItem({ mod }) {
             onBlur={handleRenameModule}
             onKeyDown={(e) => e.key === "Enter" && handleRenameModule()}
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 bg-white/10 text-white text-xs px-2 py-0.5 rounded outline-none border border-primary"
+            className="flex-1 rounded border border-primary bg-white/10 px-2 py-1 text-sm text-white outline-none"
           />
         ) : (
-          <span className="flex-1 text-sm font-semibold text-gray-200 truncate">{mod.title}</span>
+          <span className="flex-1 truncate text-base font-semibold text-gray-200">{mod.title}</span>
         )}
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => setEditing(true)} className="p-1 hover:text-primary text-gray-500 transition-colors">
@@ -80,13 +80,13 @@ function ModuleItem({ mod }) {
             <div
               key={sm._id}
               onClick={() => handleSubmoduleClick(sm)}
-              className={`flex items-center justify-between group pl-9 pr-3 py-2 cursor-pointer transition-colors ${
+              className={`group flex cursor-pointer items-center justify-between py-2.5 pl-11 pr-4 transition-colors ${
                 activeId === sm._id
                   ? "bg-primary/20 border-l-2 border-primary text-white"
                   : "text-gray-400 hover:bg-white/5 hover:text-gray-200 border-l-2 border-transparent"
               }`}
             >
-              <span className="text-sm truncate flex-1">{sm.title}</span>
+              <span className="flex-1 truncate text-base">{sm.title}</span>
               <button
                 onClick={(e) => { e.stopPropagation(); dispatch(deleteSubmodule({ id: sm._id, moduleId: mod._id })); }}
                 className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 text-gray-500 transition-all"
@@ -97,14 +97,14 @@ function ModuleItem({ mod }) {
           ))}
 
           {addingSubmodule ? (
-            <div className="flex gap-1 pl-9 pr-3 py-1.5">
+            <div className="flex gap-1 py-2 pl-11 pr-4">
               <input
                 autoFocus
                 value={newSub}
                 onChange={(e) => setNewSub(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAddSubmodule(); if (e.key === "Escape") setAddingSubmodule(false); }}
                 placeholder="Submodule title..."
-                className="flex-1 bg-white/10 text-white text-xs px-2 py-1 rounded outline-none border border-primary/60 placeholder-gray-500"
+                className="flex-1 rounded border border-primary/60 bg-white/10 px-2 py-1.5 text-sm text-white outline-none placeholder-gray-500"
               />
               <button onClick={handleAddSubmodule} className="text-primary text-xs font-bold px-1.5 hover:text-primary-dark">✓</button>
               <button onClick={() => setAddingSubmodule(false)} className="text-gray-500 text-xs px-1 hover:text-gray-300">✕</button>
@@ -112,7 +112,7 @@ function ModuleItem({ mod }) {
           ) : (
             <button
               onClick={() => setAddingSubmodule(true)}
-              className="flex items-center gap-1.5 pl-9 pr-3 py-1.5 w-full text-xs text-gray-500 hover:text-primary transition-colors"
+              className="flex w-full items-center gap-1.5 py-2 pl-11 pr-4 text-sm text-gray-500 transition-colors hover:text-primary"
             >
               <PlusIcon className="w-3 h-3" /> Add Submodule
             </button>
@@ -138,16 +138,16 @@ export default function Sidebar({ courseId, modules }) {
   };
 
   const sidebar = (
-    <div className="flex flex-col h-full bg-[#1a1f2e] select-none">
+    <div className="flex h-full flex-col bg-[#1a1f2e] select-none">
       {/* Course title */}
-      <div className="px-4 py-3 border-b border-white/10">
-        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Course</p>
-        <p className="text-sm font-semibold text-white truncate">{course?.title}</p>
+      <div className="border-b border-white/10 px-5 py-4">
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-gray-500">Course</p>
+        <p className="truncate text-base font-semibold text-white">{course?.title}</p>
       </div>
 
       {/* Modules label */}
-      <div className="px-4 pt-4 pb-2">
-        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Modules</p>
+      <div className="px-5 pb-2 pt-5">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Modules</p>
       </div>
 
       {/* Module list */}
@@ -157,7 +157,7 @@ export default function Sidebar({ courseId, modules }) {
         ))}
 
         {/* Add module */}
-        <div className="px-4 py-3">
+        <div className="px-5 py-4">
           {addingModule ? (
             <div className="flex gap-1">
               <input
@@ -166,7 +166,7 @@ export default function Sidebar({ courseId, modules }) {
                 onChange={(e) => setNewModTitle(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAddModule(); if (e.key === "Escape") setAddingModule(false); }}
                 placeholder="Module title..."
-                className="flex-1 bg-white/10 text-white text-sm px-2 py-1.5 rounded outline-none border border-primary/60 placeholder-gray-500"
+                className="flex-1 rounded border border-primary/60 bg-white/10 px-3 py-2 text-sm text-white outline-none placeholder-gray-500"
               />
               <button onClick={handleAddModule} className="text-primary font-bold px-2 hover:text-primary-dark">✓</button>
               <button onClick={() => setAddingModule(false)} className="text-gray-500 px-1 hover:text-gray-300">✕</button>
@@ -174,7 +174,7 @@ export default function Sidebar({ courseId, modules }) {
           ) : (
             <button
               onClick={() => setAddingModule(true)}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
+              className="flex w-full items-center gap-2 rounded-lg border border-primary/30 px-3 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
             >
               <PlusIcon className="w-4 h-4" /> Add Module
             </button>
@@ -188,10 +188,11 @@ export default function Sidebar({ courseId, modules }) {
     <>
       {/* Mobile toggle */}
       <button
-        className="md:hidden fixed top-3 left-3 z-50 bg-[#1a1f2e] p-2 rounded-lg text-white shadow-lg"
+        className="fixed left-3 top-3 z-50 rounded-lg bg-[#1a1f2e] p-2.5 text-white shadow-lg md:hidden"
         onClick={() => setMobileOpen((o) => !o)}
+        aria-label={mobileOpen ? "Close course navigation" : "Open course navigation"}
       >
-        {mobileOpen ? <XMarkIcon className="w-5 h-5" /> : <Bars3Icon className="w-5 h-5" />}
+        {mobileOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
       </button>
 
       {mobileOpen && (
@@ -199,8 +200,8 @@ export default function Sidebar({ courseId, modules }) {
       )}
 
       <aside className={`
-        fixed md:relative z-40 h-full flex-shrink-0
-        w-64 transition-transform duration-300
+        fixed bottom-0 top-14 z-40 w-[min(86vw,20rem)] flex-shrink-0
+        transition-transform duration-300 md:relative md:top-0 md:h-full md:w-72 xl:w-80
         ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
         {sidebar}

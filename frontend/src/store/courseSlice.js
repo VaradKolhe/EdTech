@@ -41,9 +41,13 @@ export const fetchSubmoduleContent = createAsyncThunk("course/fetchContent", asy
   return { id, ...data };
 });
 
-export const saveBlocks = createAsyncThunk("course/saveBlocks", async ({ id, blocks }) => {
-  const { data } = await api.put(`/submodules/${id}/blocks`, { blocks });
-  return data;
+export const saveBlocks = createAsyncThunk("course/saveBlocks", async ({ id, blocks }, { rejectWithValue }) => {
+  try {
+    const { data } = await api.put(`/submodules/${id}/blocks`, { blocks });
+    return data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.error || "Could not save lesson content.");
+  }
 });
 
 export const saveContent = createAsyncThunk("course/saveContent", async (payload) => {

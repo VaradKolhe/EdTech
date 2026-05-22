@@ -24,7 +24,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (error) {
+  if (error && !course) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0e1117]">
         <div className="text-center">
@@ -36,13 +36,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#0e1117]">
+    <div className="flex h-screen min-w-0 flex-col overflow-hidden bg-[#0e1117]">
       <Navbar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-w-0 flex-1 overflow-hidden">
         {/* Sidebar */}
         <Sidebar courseId={courseId} modules={course?.modules || []} />
         {/* Main content — fills ALL remaining space */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-[#0e1117]">
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-gray-50 dark:bg-[#0e1117]">
           <ContentEditor onBack={() => navigate("/")} />
         </main>
       </div>

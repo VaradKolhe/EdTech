@@ -85,12 +85,12 @@ function StatCard({ icon: Icon, label, value, caption, tone }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+          <p className="mt-2 break-words text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{caption}</p>
         </div>
-        <div className={`rounded-lg border p-2 ${tones[tone]}`}>
+        <div className={`flex-shrink-0 rounded-lg border p-2 ${tones[tone]}`}>
           <Icon className="h-5 w-5" />
         </div>
       </div>
@@ -151,10 +151,10 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2 text-primary font-bold text-xl">
+      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:px-6 sm:py-4">
+        <div className="flex min-w-0 items-center gap-2 text-xl font-bold text-primary">
           <AcademicCapIcon className="w-7 h-7" />
-          EduForge
+          <span className="truncate">EduForge</span>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={toggle} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -164,21 +164,21 @@ export default function CoursesPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-6 py-8">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div>
+      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Teacher Dashboard</h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage courses, students, and performance</p>
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors shadow-sm"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-white shadow-sm transition-colors hover:bg-primary-dark sm:w-auto"
           >
             <PlusIcon className="w-4 h-4" /> New Course
           </button>
         </div>
 
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <StatCard icon={BookOpenIcon} label="Total Courses" value={courses.length} caption="Published and draft courses" tone="green" />
           <StatCard icon={UserGroupIcon} label="Total Students" value={totals.students} caption="Across all courses" tone="blue" />
           <StatCard icon={BanknotesIcon} label="Total Revenue" value={currency.format(totals.revenue)} caption="Estimated earnings" tone="amber" />
@@ -187,7 +187,7 @@ export default function CoursesPage() {
         </div>
 
         {showForm && (
-          <form onSubmit={handleCreate} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-8">
+          <form onSubmit={handleCreate} className="mb-8 rounded-lg border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-6">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Create New Course</h2>
             <div className="space-y-3">
               <input
@@ -214,11 +214,11 @@ export default function CoursesPage() {
             {error && (
               <p className="mt-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>
             )}
-            <div className="flex gap-3 mt-4">
-              <button type="submit" disabled={saving} className="px-5 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-60">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <button type="submit" disabled={saving} className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:opacity-60">
                 {saving ? "Creating..." : "Create Course"}
               </button>
-              <button type="button" onClick={() => { setShowForm(false); setError(""); }} className="px-5 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+              <button type="button" onClick={() => { setShowForm(false); setError(""); }} className="rounded-lg bg-gray-100 px-5 py-2 text-sm transition-colors hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600">
                 Cancel
               </button>
             </div>
@@ -246,11 +246,11 @@ export default function CoursesPage() {
                   key={c._id}
                   className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
                 >
-                  <div className="grid gap-0 sm:grid-cols-[190px_1fr]">
+                  <div className="grid gap-0 md:grid-cols-[190px_1fr]">
                     <button
                       type="button"
                       onClick={() => navigate(`/courses/${c._id}`)}
-                      className="h-44 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center overflow-hidden sm:h-full"
+                      className="flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 md:h-full"
                     >
                       {c.thumbnail ? (
                         <img src={c.thumbnail} alt={c.title} className="h-full w-full object-cover" />
@@ -259,9 +259,9 @@ export default function CoursesPage() {
                       )}
                     </button>
 
-                    <div className="p-5">
+                    <div className="p-4 sm:p-5">
                       <div className="flex items-start justify-between gap-3">
-                        <div>
+                        <div className="min-w-0">
                           <h3 className="font-semibold text-gray-900 dark:text-white">{c.title}</h3>
                           {c.description && (
                             <p className="mt-1 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{c.description}</p>
@@ -277,7 +277,7 @@ export default function CoursesPage() {
                         </button>
                       </div>
 
-                      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div className="mt-4 grid grid-cols-1 gap-3 text-sm min-[420px]:grid-cols-2">
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">Students</p>
                           <p className="font-semibold text-gray-900 dark:text-white">{stats.studentCount}</p>
@@ -296,7 +296,7 @@ export default function CoursesPage() {
                         </div>
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                      <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                         <span>{c.modules?.length || 0} modules</span>
                         <button
                           type="button"
@@ -311,20 +311,20 @@ export default function CoursesPage() {
                   </div>
 
                   {expanded && (
-                    <div className="border-t border-gray-100 px-5 py-4 dark:border-gray-700">
-                      <div className="mb-3 flex items-center justify-between">
+                    <div className="border-t border-gray-100 px-4 py-4 dark:border-gray-700 sm:px-5">
+                      <div className="mb-3 flex flex-col gap-1 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                         <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Enrolled Students</h4>
                         <span className="text-xs text-gray-500 dark:text-gray-400">{stats.studentCount} total</span>
                       </div>
                       <div className="divide-y divide-gray-100 dark:divide-gray-700">
                         {stats.students.map((student) => (
-                          <div key={student.id || student.email || student.name} className="flex items-center justify-between gap-4 py-3">
+                          <div key={student.id || student.email || student.name} className="flex flex-col gap-3 py-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between min-[420px]:gap-4">
                             <div className="min-w-0">
                               <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{student.name}</p>
                               <p className="truncate text-xs text-gray-500 dark:text-gray-400">{student.email}</p>
                             </div>
-                            <div className="w-28 flex-shrink-0">
-                              <div className="mb-1 flex justify-end text-xs font-semibold text-gray-600 dark:text-gray-300">{student.progress}%</div>
+                            <div className="w-full flex-shrink-0 min-[420px]:w-28">
+                              <div className="mb-1 flex justify-start text-xs font-semibold text-gray-600 dark:text-gray-300 min-[420px]:justify-end">{student.progress}%</div>
                               <div className="h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
                                 <div className="h-full rounded-full bg-primary" style={{ width: `${student.progress}%` }} />
                               </div>

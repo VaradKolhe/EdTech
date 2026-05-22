@@ -15,7 +15,7 @@ exports.getCourses = async (req, res) => {
     const courses = await Course.find().populate({
       path: "modules",
       select: "moduleNumber title submodules",
-      populate: { path: "submodules", select: "title" },
+      populate: { path: "submodules", select: "title blocks contents quizzes updatedAt" },
     });
     res.json(courses);
   } catch (err) {
@@ -27,7 +27,7 @@ exports.getCourseById = async (req, res) => {
   try {
     const course = await Course.findById(req.params.id).populate({
       path: "modules",
-      populate: { path: "submodules", select: "title" },
+      populate: { path: "submodules", select: "title blocks contents quizzes updatedAt" },
     });
     if (!course) return res.status(404).json({ error: "Course not found" });
     res.json(course);

@@ -9,41 +9,41 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   return (
-    <header className="h-12 bg-[#1a1f2e] border-b border-white/10 flex items-center px-4 gap-3 z-20 flex-shrink-0">
+    <header className="z-20 flex h-14 flex-shrink-0 items-center gap-3 border-b border-white/10 bg-[#1a1f2e] px-14 sm:px-5">
       {/* Logo */}
-      <Link to="/" className="flex items-center gap-2 text-primary font-bold text-base mr-2">
-        <AcademicCapIcon className="w-5 h-5" />
-        <span className="hidden sm:inline text-white">EduForge</span>
+      <Link to="/" className="mr-1 flex min-w-0 items-center gap-2 text-lg font-bold text-primary sm:mr-3">
+        <AcademicCapIcon className="h-6 w-6" />
+        <span className="hidden text-white sm:inline">EduForge</span>
       </Link>
 
       {/* Breadcrumb */}
       {course && (
         <>
-          <span className="text-gray-600 text-sm">/</span>
+          <span className="hidden text-base text-gray-600 sm:inline">/</span>
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+            className="hidden items-center gap-1.5 text-base text-gray-400 transition-colors hover:text-white sm:flex"
           >
-            <ArrowLeftIcon className="w-3.5 h-3.5" />
+            <ArrowLeftIcon className="h-4 w-4" />
             All Courses
           </button>
-          <span className="text-gray-600 text-sm">/</span>
-          <span className="text-sm text-gray-300 truncate max-w-xs">{course.title}</span>
+          <span className="hidden text-base text-gray-600 sm:inline">/</span>
+          <span className="min-w-0 max-w-[42vw] truncate text-base font-medium text-gray-300 sm:max-w-md">{course.title}</span>
         </>
       )}
 
       <div className="ml-auto flex items-center gap-2">
         <button
           onClick={toggle}
-          className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+          className="rounded-lg p-2 transition-colors hover:bg-white/10"
           title="Toggle dark mode"
         >
           {dark
-            ? <SunIcon className="w-4 h-4 text-yellow-400" />
-            : <MoonIcon className="w-4 h-4 text-gray-400" />
+            ? <SunIcon className="h-5 w-5 text-yellow-400" />
+            : <MoonIcon className="h-5 w-5 text-gray-400" />
           }
         </button>
-        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
           T
         </div>
       </div>
