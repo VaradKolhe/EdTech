@@ -138,16 +138,16 @@ export default function Sidebar({ courseId, modules }) {
   };
 
   const sidebar = (
-    <div className="flex h-full flex-col bg-[#1a1f2e] select-none">
+    <div className="flex h-full flex-col bg-slate-100 dark:bg-[#1a1f2e] select-none">
       {/* Course title */}
-      <div className="border-b border-white/10 px-5 py-4">
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-gray-500">Course</p>
-        <p className="truncate text-base font-semibold text-white">{course?.title}</p>
+      <div className="border-b border-slate-200 dark:border-white/10 px-5 py-4">
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-gray-500">Course</p>
+        <p className="truncate text-base font-semibold text-slate-800 dark:text-white">{course?.title}</p>
       </div>
 
       {/* Modules label */}
       <div className="px-5 pb-2 pt-5">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Modules</p>
+        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-gray-500">Modules</p>
       </div>
 
       {/* Module list */}
@@ -188,7 +188,7 @@ export default function Sidebar({ courseId, modules }) {
     <>
       {/* Mobile toggle */}
       <button
-        className="fixed left-3 top-3 z-50 rounded-lg bg-[#1a1f2e] p-2.5 text-white shadow-lg md:hidden"
+        className="fixed left-3 top-3 z-50 rounded-lg bg-slate-100 dark:bg-[#1a1f2e] p-2.5 text-slate-800 dark:text-white shadow-lg md:hidden"
         onClick={() => setMobileOpen((o) => !o)}
         aria-label={mobileOpen ? "Close course navigation" : "Open course navigation"}
       >

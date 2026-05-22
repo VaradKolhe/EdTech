@@ -16,7 +16,7 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   return (
-    <header className="z-20 flex h-14 flex-shrink-0 items-center gap-3 border-b border-white/10 bg-slate-900 px-14 sm:px-5">
+    <header className="z-20 flex h-14 flex-shrink-0 items-center gap-3 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-14 sm:px-5">
       <Link
         to="/teacher-dashboard"
         className="mr-1 flex min-w-0 items-center gap-2 text-lg font-bold text-primary sm:mr-3"

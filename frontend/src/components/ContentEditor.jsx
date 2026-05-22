@@ -49,8 +49,8 @@ function RichTextEditor({ value, onChange }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.03]">
-      <div className="flex flex-wrap items-center gap-1 border-b border-white/10 bg-white/5 px-2 py-1.5">
+    <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03]">
+      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-2 py-1.5">
         <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => runCommand("bold")} className="w-8 h-8 rounded-md text-sm font-bold text-gray-300 hover:bg-white/10 hover:text-white transition-colors" title="Bold">
           B
         </button>
@@ -73,7 +73,7 @@ function RichTextEditor({ value, onChange }) {
         suppressContentEditableWarning
         onInput={emitChange}
         onBlur={emitChange}
-        className="min-h-[180px] px-3 py-3 text-sm leading-6 text-gray-100 outline-none prose prose-invert prose-sm max-w-none empty:before:content-[attr(data-placeholder)] empty:before:text-gray-500 sm:px-4"
+        className="min-h-[180px] px-3 py-3 text-sm leading-6 text-slate-800 dark:text-gray-100 outline-none prose dark:prose-invert prose-sm max-w-none empty:before:content-[attr(data-placeholder)] empty:before:text-gray-500 sm:px-4"
         data-placeholder="Write lesson content here..."
       />
     </div>
@@ -113,7 +113,7 @@ function VideoEmbed({ url }) {
 /* ── Block header row (shared) ───────────────────────────── */
 function BlockHeader({ label, color, lang, onLangChange, extra, onMoveUp, onMoveDown, onDelete, isFirst, isLast }) {
   return (
-      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 bg-white/5 px-3 py-2.5 sm:px-4">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-2.5 sm:px-4">
       <span className={`min-w-0 flex-1 text-sm font-bold uppercase tracking-wider ${color}`}>{label}</span>
       <div className="flex flex-wrap items-center justify-end gap-1">
         <LangTabs active={lang} onChange={onLangChange} />
@@ -144,7 +144,7 @@ function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
   };
 
   return (
-    <div className="bg-[#141820] border border-white/10 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
       <BlockHeader
         label="📝 Text" color="text-blue-400"
         lang={lang} onLangChange={onLangChange}
@@ -177,7 +177,7 @@ function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
 function VideoBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
   const [preview, setPreview] = useState(false);
   return (
-    <div className="bg-[#141820] border border-white/10 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
       <BlockHeader
         label="🎬 Video" color="text-purple-400"
         lang={lang} onLangChange={onLangChange}
@@ -236,7 +236,7 @@ function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
   const removeQuestion = (qi) => onChange({ quizQuestions: block.quizQuestions.filter((_, i) => i !== qi) });
 
   return (
-    <div className="bg-[#141820] border border-white/10 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
       <BlockHeader
         label={`🧠 Quiz · ${block.quizQuestions?.length || 0} questions`} color="text-yellow-400"
         lang={lang} onLangChange={onLangChange}
@@ -403,7 +403,7 @@ export default function ContentEditor() {
   /* No submodule selected */
   if (!activeSubmoduleId) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center h-full bg-[#0e1117]">
+      <div className="flex-1 flex flex-col items-center justify-center h-full bg-slate-50 dark:bg-[#0e1117]">
         <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-5">
           <span className="text-4xl">📚</span>
         </div>
@@ -417,7 +417,7 @@ export default function ContentEditor() {
 
   if (contentLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#0e1117]">
+      <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-[#0e1117]">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -435,10 +435,10 @@ export default function ContentEditor() {
   });
 
   return (
-    <div className="flex h-full min-w-0 flex-col bg-[#0e1117]">
+    <div className="flex h-full min-w-0 flex-col bg-slate-50 dark:bg-[#0e1117]">
 
       {/* ── Sticky top toolbar ── */}
-      <div className="flex flex-shrink-0 flex-col gap-3 border-b border-white/10 bg-[#141820] px-4 py-3 sm:px-7 lg:flex-row lg:items-center">
+      <div className="flex flex-shrink-0 flex-col gap-3 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#141820] px-4 py-3 sm:px-7 lg:flex-row lg:items-center">
         <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
         <button onClick={() => addBlock("TEXT")} className="flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-600/20 px-2.5 py-2 text-sm font-semibold text-blue-400 transition-colors hover:bg-blue-600/30 sm:px-4">
           <PlusIcon className="h-4 w-4" /> Add Text
@@ -466,7 +466,7 @@ export default function ContentEditor() {
       </div>
 
       {/* ── Lesson title ── */}
-      <div className="flex-shrink-0 border-b border-white/10 bg-[#141820] px-4 py-4 sm:px-7">
+      <div className="flex-shrink-0 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#141820] px-4 py-4 sm:px-7">
         {editingTitle ? (
           <input
             autoFocus value={titleVal}
