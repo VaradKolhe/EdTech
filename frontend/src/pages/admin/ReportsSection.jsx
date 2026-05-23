@@ -24,7 +24,7 @@ export default function ReportsSection() {
 
   const userPie = [
     { name: "Students", value: reports?.userCounts?.student ?? 0 },
-    { name: "Teachers", value: reports?.userCounts?.teacher ?? 0 },
+    { name: "Instructors", value: reports?.userCounts?.instructor ?? 0 },
     { name: "Admins", value: reports?.userCounts?.admin ?? 0 },
   ].filter((d) => d.value > 0);
 
@@ -50,8 +50,8 @@ export default function ReportsSection() {
           icon="🎓"
         />
         <StatCard
-          label="Teachers"
-          value={reports?.userCounts?.teacher ?? 0}
+          label="Instructors"
+          value={reports?.userCounts?.instructor ?? 0}
           icon="👨‍🏫"
           accent="indigo"
         />

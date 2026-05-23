@@ -1,27 +1,27 @@
 import User from "../../models/User.js";
 import Course from "../../models/Course.js";
-import Feedback from "../../models/Feedback.js";
+import Rating from "../../models/Rating.js";
 
 export const getPlatformStats = async (_req, res) => {
   try {
     const [
       totalStudents,
-      totalTeachers,
+      totalInstructors,
       totalCourses,
       pendingVerifications,
-      totalFeedback,
+      totalRatings,
       avgRatingAgg,
     ] = await Promise.all([
-      User.countDocuments({ role: "student", isDeleted: false }),
-      User.countDocuments({ role: "teacher", isDeleted: false }),
-      Course.countDocuments({ isDeleted: false }),
+      User.countDocuments({ role: "student", isActive: true }),
+      User.countDocuments({ role: "instructor", isActive: true }),
+      Course.countDocuments(),
       User.countDocuments({
-        role: "teacher",
-        verificationStatus: "pending",
-        isDeleted: false,
+        role: "instructor",
+        "instructorProfile.verification.status": "PENDING",
+        isActive: true,
       }),
-      Feedback.countDocuments(),
-      Feedback.aggregate([
+      Rating.countDocuments(),
+      Rating.aggregate([
         { $group: { _id: null, avg: { $avg: "$rating" } } },
       ]),
     ]);
@@ -33,10 +33,10 @@ export const getPlatformStats = async (_req, res) => {
 
     res.json({
       totalStudents,
-      totalTeachers,
+      totalInstructors,
       totalCourses,
       pendingVerifications,
-      totalFeedback,
+      totalRatings,
       averageRating,
     });
   } catch (error) {
@@ -48,10 +48,10 @@ export const getReports = async (_req, res) => {
   try {
     const [userCounts, feedbackStats, courseStats] = await Promise.all([
       User.aggregate([
-        { $match: { isDeleted: false } },
+        { $match: { isActive: true } },
         { $group: { _id: "$role", count: { $sum: 1 } } },
       ]),
-      Feedback.aggregate([
+      Rating.aggregate([
         {
           $group: {
             _id: null,
@@ -61,10 +61,10 @@ export const getReports = async (_req, res) => {
         },
       ]),
       Course.aggregate([
-        { $match: { isDeleted: false } },
+        { $match: {} },
         {
           $group: {
-            _id: "$category",
+            _id: "$categoryId",
             count: { $sum: 1 },
             avgPrice: { $avg: "$price" },
           },

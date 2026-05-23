@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { registerTeacher } from "../../api/authApi";
+import { registerInstructor } from "../../api/authApi";
 import AuthLayout from "../../components/layout/AuthLayout";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import { useAuth } from "../../context/AuthContext";
 
-export default function TeacherRegister() {
+export default function InstructorRegister() {
   const { persistAuth, getRoleRedirectPath } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    fullName: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -31,9 +31,16 @@ export default function TeacherRegister() {
     setLoading(true);
     setError("");
     try {
-      const { data } = await registerTeacher(form);
+      const { data } = await registerInstructor({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        expertise: [form.degreeSpecialization].filter(Boolean),
+        bio: { en: form.qualification },
+      });
       persistAuth(data.user);
-      navigate(getRoleRedirectPath("teacher"));
+      navigate(getRoleRedirectPath("instructor"));
     } catch (err) {
       setError(
         err.response?.data?.message || "Registration failed. Please try again."
@@ -56,10 +63,10 @@ export default function TeacherRegister() {
         )}
 
         <Input
-          id="fullName"
-          name="fullName"
+          id="name"
+          name="name"
           label="Full Name"
-          value={form.fullName}
+          value={form.name}
           onChange={handleChange}
           required
         />
@@ -113,7 +120,7 @@ export default function TeacherRegister() {
           id="degreeSpecialization"
           name="degreeSpecialization"
           label="Degree / Specialization"
-          placeholder="e.g. Computer Science, Networking"
+            placeholder="e.g. Computer Science, Networking"
           value={form.degreeSpecialization}
           onChange={handleChange}
           required

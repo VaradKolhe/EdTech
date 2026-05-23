@@ -3,16 +3,18 @@ import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 import { uploadCertificate } from "../middleware/uploadMiddleware.js";
 import { getPlatformStats, getReports } from "../controllers/admin/statsController.js";
 import {
-  getTeachers,
-  updateTeacherVerification,
-  deleteTeacher,
-} from "../controllers/admin/teachersController.js";
+  getInstructors,
+  updateInstructorVerification,
+  deleteInstructor,
+} from "../controllers/admin/instructorsController.js";
 import { getStudents, deleteStudent } from "../controllers/admin/studentsController.js";
 import { getCourses, deleteCourse } from "../controllers/admin/coursesController.js";
 import { getFeedbackAnalytics } from "../controllers/admin/feedbackController.js";
 import {
   getCertificates,
   uploadCertificate as uploadCertificateHandler,
+  setDefaultCertificate,
+  updateCertificateStatus,
   deleteCertificate,
 } from "../controllers/admin/certificatesController.js";
 import {
@@ -27,9 +29,9 @@ router.use(protect, authorizeRoles("admin"));
 router.get("/stats", getPlatformStats);
 router.get("/reports", getReports);
 
-router.get("/teachers", getTeachers);
-router.patch("/teachers/:id/verification", updateTeacherVerification);
-router.delete("/teachers/:id", deleteTeacher);
+router.get("/instructors", getInstructors);
+router.patch("/instructors/:id/verification", updateInstructorVerification);
+router.delete("/instructors/:id", deleteInstructor);
 
 router.get("/students", getStudents);
 router.delete("/students/:id", deleteStudent);
@@ -45,6 +47,8 @@ router.post(
   uploadCertificate.single("file"),
   uploadCertificateHandler
 );
+router.patch("/certificates/:id/default", setDefaultCertificate);
+router.patch("/certificates/:id/status", updateCertificateStatus);
 router.delete("/certificates/:id", deleteCertificate);
 
 router.delete("/moderation/users/:id", removeUser);

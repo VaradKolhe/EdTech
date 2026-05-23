@@ -1,33 +1,29 @@
+import crypto from "crypto";
 import User from "../models/User.js";
-import Student from "../models/Student.js";
-import Teacher from "../models/Teacher.js";
 import generateToken from "../utils/generateToken.js";
 
-const buildAuthResponse = (user) => ({
+const publicUser = (user) => ({
   _id: user._id,
-  fullName: user.fullName,
+  name: user.name,
   email: user.email,
   role: user.role,
-  verificationStatus: user.verificationStatus,
+  profileImageUrl: user.profileImageUrl,
+  profile: user.profile,
+  instructorProfile: user.role === "instructor" ? user.instructorProfile : undefined,
+  stats: user.stats,
   token: generateToken(user._id, user.role),
 });
 
 export const registerStudent = async (req, res) => {
   try {
-    const { fullName, email, password, confirmPassword } = req.body;
+    const { name, email, password, confirmPassword } = req.body;
+    const studentName = name;
 
-    if (!fullName || !email || !password || !confirmPassword) {
+    if (!studentName || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: "All fields are required" });
     }
-
     if (password !== confirmPassword) {
       return res.status(400).json({ message: "Passwords do not match" });
-    }
-
-    if (password.length < 6) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 6 characters" });
     }
 
     const existing = await User.findOne({ email: email.toLowerCase() });
@@ -36,68 +32,38 @@ export const registerStudent = async (req, res) => {
     }
 
     const user = await User.create({
-      fullName,
+      name: studentName,
       email,
       password,
       role: "student",
     });
 
-    await Student.create({ user: user._id });
-
     res.status(201).json({
       message: "Student registered successfully",
-      user: buildAuthResponse(user),
+      user: publicUser(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message || "Registration failed" });
   }
 };
 
-export const registerTeacher = async (req, res) => {
+export const registerInstructor = async (req, res) => {
   try {
     const {
-      fullName,
+      name,
       email,
       password,
       confirmPassword,
-      qualification,
-      yearsOfExperience,
-      degreeSpecialization,
-      experience,
-      specialization,
+      expertise = [],
+      bio = {},
     } = req.body;
+    const instructorName = name;
 
-    const teacherExperience = yearsOfExperience ?? experience;
-    const teacherSpecialization = degreeSpecialization ?? specialization;
-
-    if (
-      !fullName ||
-      !email ||
-      !password ||
-      !confirmPassword ||
-      !qualification ||
-      teacherExperience === undefined ||
-      teacherExperience === "" ||
-      !teacherSpecialization
-    ) {
+    if (!instructorName || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: "All fields are required" });
     }
-
     if (password !== confirmPassword) {
       return res.status(400).json({ message: "Passwords do not match" });
-    }
-
-    if (password.length < 6) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 6 characters" });
-    }
-
-    const years = Number(teacherExperience);
-    if (Number.isNaN(years) || years < 0) {
-      return res
-        .status(400)
-        .json({ message: "Years of experience must be a valid number" });
     }
 
     const existing = await User.findOne({ email: email.toLowerCase() });
@@ -106,29 +72,20 @@ export const registerTeacher = async (req, res) => {
     }
 
     const user = await User.create({
-      fullName,
+      name: instructorName,
       email,
       password,
-      role: "teacher",
-      qualification,
-      yearsOfExperience: years,
-      experience: years,
-      degreeSpecialization: teacherSpecialization,
-      specialization: teacherSpecialization,
-      verificationStatus: "pending",
-    });
-
-    await Teacher.create({
-      user: user._id,
-      qualification,
-      experience: years,
-      specialization: teacherSpecialization,
-      verificationStatus: "pending",
+      role: "instructor",
+      instructorProfile: {
+        bio,
+        expertise: Array.isArray(expertise) ? expertise : [expertise].filter(Boolean),
+        verification: { status: "PENDING" },
+      },
     });
 
     res.status(201).json({
-      message: "Teacher registered successfully. Awaiting admin approval.",
-      user: buildAuthResponse(user),
+      message: "Instructor registered successfully. Awaiting admin approval.",
+      user: publicUser(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message || "Registration failed" });
@@ -137,48 +94,89 @@ export const registerTeacher = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
 
-    if (!email || !password || !role) {
-      return res
-        .status(400)
-        .json({ message: "Email, password, and role are required" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
     }
 
     const user = await User.findOne({ email: email.toLowerCase() }).select(
-      "+password"
+      "+passwordHash"
     );
-
-    if (!user) {
+    if (!user || !user.comparePassword(password)) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-
-    if (user.role !== role) {
-      return res.status(401).json({
-        message: "Invalid credentials for selected role",
-      });
+    if (!user.isActive) {
+      return res.status(403).json({ message: "Account is inactive" });
     }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    if (user.role === "teacher" && user.verificationStatus === "rejected") {
+    if (
+      user.role === "instructor" &&
+      user.instructorProfile?.verification?.status === "REJECTED"
+    ) {
       return res.status(403).json({
-        message: "Your teacher account has been rejected. Contact support.",
+        message: "Your instructor account has been rejected. Contact support.",
       });
     }
 
-    res.json({
-      message: "Login successful",
-      user: buildAuthResponse(user),
-    });
+    res.json({ message: "Login successful", user: publicUser(user) });
   } catch (error) {
     res.status(500).json({ message: error.message || "Login failed" });
   }
 };
 
 export const getMe = async (req, res) => {
-  res.json({ user: req.user });
+  res.json({ user: publicUser(req.user) });
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+    user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
+
+    await user.save();
+
+    // In a real app, send email here. 
+    // In development, return token in response to facilitate testing without SMTP.
+    res.json({
+      message: "If an account exists, you will receive a reset link.",
+      resetToken: process.env.NODE_ENV === "development" ? resetToken : undefined,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Failed to process request" });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.json({ message: "Password reset successful" });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Failed to reset password" });
+  }
 };
