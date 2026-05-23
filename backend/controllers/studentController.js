@@ -1,11 +1,6 @@
 import crypto from "crypto";
 import mongoose from "mongoose";
 
-// Fix for local development SSL certificate issues (e.g. corporate firewalls)
-if (process.env.NODE_ENV !== "production") {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-}
-
 import Course from "../models/Course.js";
 import Enrollment from "../models/Enrollment.js";
 import Payment from "../models/Payment.js";

@@ -23,11 +23,15 @@ import {
 import { useAuth } from "../context/AuthContext";
 
 function ModuleItem({ mod, isStudent }) {
+  const { language } = useTheme();
   const dispatch = useDispatch();
   const activeId = useSelector((s) => s.course.activeSubmoduleId);
   const [open, setOpen] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(mod.title);
+  
+  const displayTitle = mod.moduleTitle?.[language] || mod.moduleTitle?.en || mod.moduleTitle || mod.title;
+  const [title, setTitle] = useState(displayTitle);
+
   const [newSub, setNewSub] = useState("");
   const [addingSubmodule, setAddingSubmodule] = useState(false);
 
@@ -72,7 +76,7 @@ function ModuleItem({ mod, isStudent }) {
             className="flex-1 rounded border border-brand-500 bg-white dark:bg-slate-800 px-2 py-1 text-sm outline-none"
           />
         ) : (
-          <span className="flex-1 truncate text-base font-semibold text-slate-700 dark:text-slate-200">{mod.title}</span>
+          <span className="flex-1 truncate text-base font-semibold text-slate-700 dark:text-slate-200">{displayTitle}</span>
         )}
         
         {!isStudent && (
@@ -90,27 +94,30 @@ function ModuleItem({ mod, isStudent }) {
       {/* Submodules */}
       {open && (
         <div className="pb-1">
-          {mod.submodules?.map((sm) => (
-            <div
-              key={sm._id}
-              onClick={() => handleSubmoduleClick(sm)}
-              className={`group flex cursor-pointer items-center justify-between py-2.5 pl-11 pr-4 transition-colors ${
-                activeId === sm._id
-                  ? "bg-brand-600/10 border-l-2 border-brand-600 text-brand-700 dark:text-white"
-                  : "text-slate-500 hover:bg-slate-200/50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-200 border-l-2 border-transparent"
-              }`}
-            >
-              <span className="flex-1 truncate text-base">{sm.title}</span>
-              {!isStudent && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); dispatch(deleteSubmodule({ id: sm._id, moduleId: mod._id })); }}
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 text-slate-400"
-                >
-                  <TrashIcon className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          ))}
+          {mod.submodules?.map((sm) => {
+            const smTitle = sm.submoduleTitle?.[language] || sm.submoduleTitle?.en || sm.submoduleTitle || sm.title;
+            return (
+              <div
+                key={sm._id}
+                onClick={() => handleSubmoduleClick(sm)}
+                className={`group flex cursor-pointer items-center justify-between py-2.5 pl-11 pr-4 transition-colors ${
+                  activeId === sm._id
+                    ? "bg-brand-600/10 border-l-2 border-brand-600 text-brand-700 dark:text-white"
+                    : "text-slate-500 hover:bg-slate-200/50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-200 border-l-2 border-transparent"
+                }`}
+              >
+                <span className="flex-1 truncate text-base">{smTitle}</span>
+                {!isStudent && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); dispatch(deleteSubmodule({ id: sm._id, moduleId: mod._id })); }}
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 text-slate-400"
+                  >
+                    <TrashIcon className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
 
           {!isStudent && (
             addingSubmodule ? (

@@ -1,3 +1,4 @@
+import { marked } from "marked";
 import geminiService from "../services/geminiService.js";
 
 const FORBIDDEN_KEYWORDS = [
@@ -38,12 +39,15 @@ export const assistModule = async (req, res) => {
     }
 
     // 3. Call Service
-    const result = await geminiService.generateModuleAssist({
+    const rawResult = await geminiService.generateModuleAssist({
       operation,
       moduleText,
       moduleTitle: moduleTitle || "Module Content",
       language
     });
+
+    // 4. Reliable HTML Formatting using 'marked'
+    const result = await marked.parse(rawResult);
 
     res.json({ result });
   } catch (error) {

@@ -108,9 +108,12 @@ export default function AIAssistPanel({ moduleText, moduleTitle, language = "en"
                 Clear
               </button>
             </div>
-            <div className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-              {result}
-            </div>
+            <div 
+              className="text-slate-700 dark:text-slate-300 leading-relaxed space-y-4 
+                         [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6 
+                         [&_li]:pl-1 [&_p]:mb-4"
+              dangerouslySetInnerHTML={{ __html: result }} 
+            />
           </div>
         </div>
       )}

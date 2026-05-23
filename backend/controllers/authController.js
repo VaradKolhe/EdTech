@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import { randomBytes, createHash } from "crypto";
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 
@@ -193,28 +193,32 @@ export const submitVerification = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ message: "Valid email is required" });
+    }
+    
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    user.resetPasswordToken = crypto
-      .createHash("sha256")
+    const resetToken = randomBytes(32).toString("hex");
+    user.resetPasswordToken = createHash("sha256")
       .update(resetToken)
       .digest("hex");
-    user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
+    user.resetPasswordExpire = new Date(Date.now() + 3600000); // 1 hour
 
     await user.save();
 
     // In a real app, send email here. 
-    // In development, return token in response to facilitate testing without SMTP.
-    res.json({
+    const isDev = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+    return res.json({
       message: "If an account exists, you will receive a reset link.",
-      resetToken: process.env.NODE_ENV === "development" ? resetToken : undefined,
+      resetToken: isDev ? resetToken : undefined,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message || "Failed to process request" });
+    console.error("Forgot Password Error:", error);
+    return res.status(500).json({ message: "Failed to process password reset request" });
   }
 };
 

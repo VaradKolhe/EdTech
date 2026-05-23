@@ -20,6 +20,9 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
+  // Search State
+  const [searchQuery, setSearchQuery] = useState("");
+
   const role = user?.role;
   const isStudent = role === "student";
   const isInstructor = role === "instructor";
@@ -50,6 +53,13 @@ export default function Navbar() {
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    navigate(`/student-dashboard/browse?q=${encodeURIComponent(searchQuery.trim())}`);
+    setSearchQuery("");
   };
 
   const getProfilePath = () => {
@@ -90,14 +100,16 @@ export default function Navbar() {
 
       <div className="flex items-center gap-4">
         {isStudent && (
-          <div className="relative hidden lg:block">
+          <form onSubmit={handleSearch} className="relative hidden lg:block">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Ask AI to find courses..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search courses..." 
               className="h-9 w-64 rounded-full border border-slate-200 bg-slate-50 pl-10 pr-4 text-xs transition-all focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             />
-          </div>
+          </form>
         )}
 
         <button

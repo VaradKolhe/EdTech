@@ -8,13 +8,26 @@ export function ThemeProvider({ children }) {
     return stored ? stored === "dark" : true;
   });
 
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem("language") || "en";
+  });
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
     localStorage.setItem("theme", dark ? "dark" : "light");
   }, [dark]);
 
+  useEffect(() => {
+    localStorage.setItem("language", language);
+  }, [language]);
+
   return (
-    <ThemeContext.Provider value={{ dark, toggle: () => setDark((d) => !d) }}>
+    <ThemeContext.Provider value={{ 
+      dark, 
+      toggle: () => setDark((d) => !d),
+      language,
+      setLanguage
+    }}>
       {children}
     </ThemeContext.Provider>
   );

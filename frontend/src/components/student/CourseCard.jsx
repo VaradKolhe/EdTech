@@ -6,6 +6,7 @@ import {
   StarIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
+import { useTheme } from "../../context/ThemeContext";
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -14,13 +15,21 @@ const currency = new Intl.NumberFormat("en-IN", {
 });
 
 export default function CourseCard({ course }) {
+  const { language } = useTheme();
+  const title = course.title?.[language] || course.title?.en || course.title;
+  const description = course.shortDescription?.[language] || 
+                      course.shortDescription?.en || 
+                      course.description?.[language] || 
+                      course.description?.en || 
+                      "No description available.";
+
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#161b22]">
       <div className="aspect-video bg-slate-100 dark:bg-slate-800">
         {course.thumbnailUrl || course.thumbnail ? (
           <img
             src={course.thumbnailUrl || course.thumbnail}
-            alt={course.title}
+            alt={title}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -35,10 +44,10 @@ export default function CourseCard({ course }) {
           <span>{course.difficulty}</span>
         </div>
         <h3 className="line-clamp-2 text-lg font-black text-slate-900 dark:text-white">
-          {course.title}
+          {title}
         </h3>
         <p className="mt-2 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
-          {course.shortDescription || course.description || "No description available."}
+          {description}
         </p>
         <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
           <span>{course.instructor?.name || "Instructor"}</span>

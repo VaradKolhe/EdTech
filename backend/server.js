@@ -18,6 +18,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 
+// Fix for local development SSL certificate issues (e.g. corporate firewalls)
+// This allows fetch/Razorpay/Gemini to work behind security software
+if (process.env.NODE_ENV !== "production") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
 const app = express();
 
 app.use(

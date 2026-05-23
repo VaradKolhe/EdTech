@@ -132,6 +132,10 @@ export const createCourse = async (req, res) => {
     }
 
     const payload = await defaultCoursePayload(req.body, req.user);
+    
+    // Auto-translate content before saving
+    await translateCourseContent(payload);
+    
     const course = await Course.create(payload);
     res.status(201).json(course);
   } catch (error) {

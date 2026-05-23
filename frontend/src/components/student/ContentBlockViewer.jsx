@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { useParams } from "react-router-dom";
 import AIAssistPanel from "./AIAssistPanel";
+import { useTheme } from "../../context/ThemeContext";
 
 function VideoPlayer({ url, title }) {
   const youtubeId = url?.match(/(?:v=|youtu\.be\/)([^&\s]+)/)?.[1];
@@ -34,6 +35,7 @@ function TextContentViewer({ html }) {
 }
 
 export default function ContentBlockViewer({ block, onComplete }) {
+  const { language } = useTheme();
   const { courseId } = useParams();
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [result, setResult] = useState(null);
@@ -98,17 +100,20 @@ export default function ContentBlockViewer({ block, onComplete }) {
   };
 
   if (block.type === "VIDEO") {
-    return <VideoPlayer url={block.videoUrl} title={block.title} />;
+    const title = block.title?.[language] || block.title?.en || block.title;
+    return <VideoPlayer url={block.videoUrl} title={title} />;
   }
 
   if (block.type === "TEXT") {
+    const title = block.title?.[language] || block.title?.en || block.title;
+    const content = block.textContent?.[language] || block.textContent?.en || block.textContent;
     return (
       <div className="space-y-6">
-        <TextContentViewer html={block.textContent} />
+        <TextContentViewer html={content} />
         <AIAssistPanel 
-          moduleText={block.textContent} 
-          moduleTitle={block.title} 
-          language={new URLSearchParams(window.location.search).get("language") || "en"} 
+          moduleText={content} 
+          moduleTitle={title} 
+          language={language} 
         />
       </div>
     );
@@ -126,10 +131,12 @@ export default function ContentBlockViewer({ block, onComplete }) {
       );
     }
 
+    const title = block.title?.[language] || block.title?.en || block.title;
+
     return (
       <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-[#161b22]">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800 mb-6">
-          <h3 className="text-xl font-black text-slate-900 dark:text-white">Quiz: {block.title}</h3>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white">Quiz: {title}</h3>
           {result && (
             <span className={`rounded-lg px-3 py-1 text-xs font-black uppercase tracking-widest ${result.status === "PASSED" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
               {result.status} • {result.score}/{result.totalMarks}
@@ -143,7 +150,7 @@ export default function ContentBlockViewer({ block, onComplete }) {
               <div key={question.questionId} className="rounded-2xl bg-slate-50/50 p-5 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
                 <p className="font-bold text-slate-900 dark:text-white mb-4">
                   <span className="text-brand-600 mr-2">Q{index + 1}.</span> 
-                  {question.questionText?.en || question.questionText || "Question"}
+                  {question.questionText?.[language] || question.questionText?.en || question.questionText || "Question"}
                 </p>
                 <div className="grid gap-3">
                   {(question.options || []).map((option) => {
@@ -160,7 +167,7 @@ export default function ContentBlockViewer({ block, onComplete }) {
                             : "border-slate-200 bg-white hover:border-brand-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
                         } ${result ? "opacity-80" : ""}`}
                       >
-                        {option.text?.en || option.text || "Option"}
+                        {option.text?.[language] || option.text?.en || option.text || "Option"}
                       </button>
                     );
                   })}
@@ -196,7 +203,7 @@ export default function ContentBlockViewer({ block, onComplete }) {
     );
   }
 
-  return <TextContentViewer html={block.textContent} />;
+  return <TextContentViewer html={block.textContent?.[language] || block.textContent?.en || block.textContent} />;
 }
 
 export { TextContentViewer, VideoPlayer };
