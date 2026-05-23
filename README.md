@@ -5,12 +5,12 @@ Auth-only: register, login, JWT, admin seed. No dashboard UI.
 ## Pages
 
 - `/` — auth landing
-- `/login` — student / teacher / admin login
+- `/login` — student / instructor / admin login
 - `/register/student`
-- `/register/teacher`
+- `/register/instructor`
 
 ## Redirects after auth
 
-See `frontend/src/config/roleRedirects.js` (`/student-dashboard`, `/teacher-dashboard`, `/admin-dashboard`).
+See `frontend/src/config/roleRedirects.js` (`/student-dashboard`, `/instructor-dashboard`, `/admin-dashboard`).
 
 Details: SETUP.md

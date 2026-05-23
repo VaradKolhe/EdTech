@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   getStudents,
-  getTeachers,
+  getInstructors,
   getCourses,
   moderateRemoveUser,
   moderateRemoveCourse,
@@ -10,17 +10,17 @@ import Button from "../../components/ui/Button";
 
 export default function ModerationSection() {
   const [students, setStudents] = useState([]);
-  const [teachers, setTeachers] = useState([]);
+  const [instructors, setInstructors] = useState([]);
   const [courses, setCourses] = useState([]);
 
   const load = async () => {
     const [s, t, c] = await Promise.all([
       getStudents(),
-      getTeachers(),
+      getInstructors(),
       getCourses(),
     ]);
     setStudents(s.data.students.slice(0, 5));
-    setTeachers(t.data.teachers.slice(0, 5));
+    setInstructors(t.data.instructors.slice(0, 5));
     setCourses(c.data.courses.slice(0, 5));
   };
 
@@ -42,13 +42,13 @@ export default function ModerationSection() {
           title="Recent Students"
           items={students}
           onRemove={(id) => moderateRemoveUser(id, "student").then(load)}
-          labelKey="fullName"
+          labelKey="name"
         />
         <ModerationList
-          title="Recent Teachers"
-          items={teachers}
-          onRemove={(id) => moderateRemoveUser(id, "teacher").then(load)}
-          labelKey="fullName"
+          title="Recent Instructors"
+          items={instructors}
+          onRemove={(id) => moderateRemoveUser(id, "instructor").then(load)}
+          labelKey="name"
         />
       </div>
 

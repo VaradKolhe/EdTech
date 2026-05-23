@@ -72,7 +72,7 @@ export default function StudentsSection() {
             ) : (
               students.map((s) => (
                 <tr key={s._id} className="border-b dark:border-slate-700">
-                  <td className="px-4 py-3 font-medium">{s.fullName}</td>
+                  <td className="px-4 py-3 font-medium">{s.name}</td>
                   <td className="px-4 py-3">{s.email}</td>
                   <td className="px-4 py-3">{s.enrolledCourseCount ?? 0}</td>
                   <td className="px-4 py-3">

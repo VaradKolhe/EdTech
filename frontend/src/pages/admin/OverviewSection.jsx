@@ -31,8 +31,8 @@ export default function OverviewSection() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total Students" value={stats?.totalStudents} icon="🎓" />
         <StatCard
-          label="Total Teachers"
-          value={stats?.totalTeachers}
+          label="Total Instructors"
+          value={stats?.totalInstructors}
           icon="👨‍🏫"
           accent="indigo"
         />
@@ -51,8 +51,8 @@ export default function OverviewSection() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <StatCard
-          label="Total Feedback"
-          value={stats?.totalFeedback}
+          label="Total Ratings"
+          value={stats?.totalRatings}
           icon="💬"
         />
         <StatCard

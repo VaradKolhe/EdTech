@@ -51,3 +51,7 @@
     @apply border border-white/10 bg-white/5 backdrop-blur-md;
   }
 }
+
+button {
+  cursor: pointer;
+}

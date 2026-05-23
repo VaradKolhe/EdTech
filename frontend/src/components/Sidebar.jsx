@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import {
   setActiveSubmodule,
   addModule,
@@ -9,9 +10,19 @@ import {
   fetchSubmoduleContent,
   updateModule,
 } from "../store/courseSlice";
-import { ChevronDownIcon, ChevronRightIcon, PlusIcon, TrashIcon, PencilIcon, Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { 
+  ChevronDownIcon, 
+  ChevronRightIcon, 
+  PlusIcon, 
+  TrashIcon, 
+  PencilIcon, 
+  Bars3Icon, 
+  XMarkIcon,
+  ArrowLeftIcon 
+} from "@heroicons/react/24/outline";
+import { useAuth } from "../context/AuthContext";
 
-function ModuleItem({ mod }) {
+function ModuleItem({ mod, isStudent }) {
   const dispatch = useDispatch();
   const activeId = useSelector((s) => s.course.activeSubmoduleId);
   const [open, setOpen] = useState(true);
@@ -42,15 +53,15 @@ function ModuleItem({ mod }) {
     <div className="mb-0.5">
       {/* Module header */}
       <div
-        className="group flex cursor-pointer items-center gap-2 px-5 py-3 transition-colors hover:bg-white/5"
+        className="group flex cursor-pointer items-center gap-2 px-5 py-3 transition-colors hover:bg-slate-200/50 dark:hover:bg-white/5"
         onClick={() => setOpen((o) => !o)}
       >
         {open
-          ? <ChevronDownIcon className="h-4 w-4 flex-shrink-0 text-primary" />
-          : <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-gray-500" />
+          ? <ChevronDownIcon className="h-4 w-4 flex-shrink-0 text-brand-600 dark:text-brand-400" />
+          : <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-slate-400" />
         }
-        <span className="mr-1 text-sm font-bold text-primary">{mod.moduleNumber}.</span>
-        {editing ? (
+        <span className="mr-1 text-sm font-bold text-brand-600 dark:text-brand-400">{mod.moduleNumber}.</span>
+        {editing && !isStudent ? (
           <input
             autoFocus
             value={title}
@@ -58,19 +69,22 @@ function ModuleItem({ mod }) {
             onBlur={handleRenameModule}
             onKeyDown={(e) => e.key === "Enter" && handleRenameModule()}
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 rounded border border-primary bg-white/10 px-2 py-1 text-sm text-white outline-none"
+            className="flex-1 rounded border border-brand-500 bg-white dark:bg-slate-800 px-2 py-1 text-sm outline-none"
           />
         ) : (
-          <span className="flex-1 truncate text-base font-semibold text-gray-200">{mod.title}</span>
+          <span className="flex-1 truncate text-base font-semibold text-slate-700 dark:text-slate-200">{mod.title}</span>
         )}
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => setEditing(true)} className="p-1 hover:text-primary text-gray-500 transition-colors">
-            <PencilIcon className="w-3 h-3" />
-          </button>
-          <button onClick={() => dispatch(deleteModule(mod._id))} className="p-1 hover:text-red-400 text-gray-500 transition-colors">
-            <TrashIcon className="w-3 h-3" />
-          </button>
-        </div>
+        
+        {!isStudent && (
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setEditing(true)} className="p-1 hover:text-brand-600 dark:hover:text-brand-400 text-slate-400">
+              <PencilIcon className="w-3 h-3" />
+            </button>
+            <button onClick={() => dispatch(deleteModule(mod._id))} className="p-1 hover:text-red-500 text-slate-400">
+              <TrashIcon className="w-3 h-3" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Submodules */}
@@ -82,40 +96,44 @@ function ModuleItem({ mod }) {
               onClick={() => handleSubmoduleClick(sm)}
               className={`group flex cursor-pointer items-center justify-between py-2.5 pl-11 pr-4 transition-colors ${
                 activeId === sm._id
-                  ? "bg-primary/20 border-l-2 border-primary text-white"
-                  : "text-gray-400 hover:bg-white/5 hover:text-gray-200 border-l-2 border-transparent"
+                  ? "bg-brand-600/10 border-l-2 border-brand-600 text-brand-700 dark:text-white"
+                  : "text-slate-500 hover:bg-slate-200/50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-200 border-l-2 border-transparent"
               }`}
             >
               <span className="flex-1 truncate text-base">{sm.title}</span>
-              <button
-                onClick={(e) => { e.stopPropagation(); dispatch(deleteSubmodule({ id: sm._id, moduleId: mod._id })); }}
-                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 text-gray-500 transition-all"
-              >
-                <TrashIcon className="w-3 h-3" />
-              </button>
+              {!isStudent && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); dispatch(deleteSubmodule({ id: sm._id, moduleId: mod._id })); }}
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 text-slate-400"
+                >
+                  <TrashIcon className="w-3 h-3" />
+                </button>
+              )}
             </div>
           ))}
 
-          {addingSubmodule ? (
-            <div className="flex gap-1 py-2 pl-11 pr-4">
-              <input
-                autoFocus
-                value={newSub}
-                onChange={(e) => setNewSub(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAddSubmodule(); if (e.key === "Escape") setAddingSubmodule(false); }}
-                placeholder="Submodule title..."
-                className="flex-1 rounded border border-primary/60 bg-white/10 px-2 py-1.5 text-sm text-white outline-none placeholder-gray-500"
-              />
-              <button onClick={handleAddSubmodule} className="text-primary text-xs font-bold px-1.5 hover:text-primary-dark">✓</button>
-              <button onClick={() => setAddingSubmodule(false)} className="text-gray-500 text-xs px-1 hover:text-gray-300">✕</button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setAddingSubmodule(true)}
-              className="flex w-full items-center gap-1.5 py-2 pl-11 pr-4 text-sm text-gray-500 transition-colors hover:text-primary"
-            >
-              <PlusIcon className="w-3 h-3" /> Add Submodule
-            </button>
+          {!isStudent && (
+            addingSubmodule ? (
+              <div className="flex gap-1 py-2 pl-11 pr-4">
+                <input
+                  autoFocus
+                  value={newSub}
+                  onChange={(e) => setNewSub(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleAddSubmodule(); if (e.key === "Escape") setAddingSubmodule(false); }}
+                  placeholder="Submodule title..."
+                  className="flex-1 rounded border border-brand-400 bg-white dark:bg-slate-800 px-2 py-1.5 text-sm outline-none placeholder-slate-500"
+                />
+                <button onClick={handleAddSubmodule} className="text-brand-600 font-bold px-1.5 hover:text-brand-700">✓</button>
+                <button onClick={() => setAddingSubmodule(false)} className="text-slate-400 px-1 hover:text-slate-600">✕</button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setAddingSubmodule(true)}
+                className="flex w-full items-center gap-1.5 py-2 pl-11 pr-4 text-sm text-slate-400 transition-colors hover:text-brand-600 dark:hover:text-brand-400"
+              >
+                <PlusIcon className="w-3 h-3" /> Add Submodule
+              </button>
+            )
           )}
         </div>
       )}
@@ -125,10 +143,14 @@ function ModuleItem({ mod }) {
 
 export default function Sidebar({ courseId, modules }) {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const course = useSelector((s) => s.course.course);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [addingModule, setAddingModule] = useState(false);
   const [newModTitle, setNewModTitle] = useState("");
+
+  const isStudent = user?.role === "student";
 
   const handleAddModule = () => {
     if (!newModTitle.trim()) return;
@@ -137,49 +159,72 @@ export default function Sidebar({ courseId, modules }) {
     setAddingModule(false);
   };
 
+  const handleGoBack = () => {
+    if (isStudent) navigate("/student-dashboard");
+    else navigate("/instructor-dashboard");
+  };
+
   const sidebar = (
-    <div className="flex h-full flex-col bg-slate-100 dark:bg-[#1a1f2e] select-none">
+    <div className="flex h-full flex-col bg-slate-50 dark:bg-[#0b0e14] border-r border-slate-200 dark:border-slate-800 select-none">
+      {/* Back button */}
+      <div className="px-5 py-6">
+        <button
+          onClick={handleGoBack}
+          className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-600 dark:text-brand-400 hover:translate-x-[-4px] transition-transform"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          Back to Dashboard
+        </button>
+      </div>
+
       {/* Course title */}
-      <div className="border-b border-slate-200 dark:border-white/10 px-5 py-4">
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-gray-500">Course</p>
-        <p className="truncate text-base font-semibold text-slate-800 dark:text-white">{course?.title}</p>
+      <div className="border-b border-slate-200 dark:border-slate-800 px-5 pb-6 pt-2">
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">Course</p>
+        <p className="truncate text-lg font-black text-slate-900 dark:text-white leading-tight">{course?.title}</p>
       </div>
 
       {/* Modules label */}
-      <div className="px-5 pb-2 pt-5">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-gray-500">Modules</p>
+      <div className="px-5 pb-2 pt-6 flex items-center justify-between">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Learning Modules</p>
+        {isStudent && (
+          <span className="px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-900/30 text-[10px] font-bold text-brand-600 dark:text-brand-400">
+            {modules?.length || 0} Modules
+          </span>
+        )}
       </div>
 
       {/* Module list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pt-2 pb-10">
         {modules?.map((mod) => (
-          <ModuleItem key={mod._id} mod={mod} courseId={courseId} />
+          <ModuleItem key={mod._id} mod={mod} courseId={courseId} isStudent={isStudent} />
         ))}
 
         {/* Add module */}
-        <div className="px-5 py-4">
-          {addingModule ? (
-            <div className="flex gap-1">
-              <input
-                autoFocus
-                value={newModTitle}
-                onChange={(e) => setNewModTitle(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleAddModule(); if (e.key === "Escape") setAddingModule(false); }}
-                placeholder="Module title..."
-                className="flex-1 rounded border border-primary/60 bg-white/10 px-3 py-2 text-sm text-white outline-none placeholder-gray-500"
-              />
-              <button onClick={handleAddModule} className="text-primary font-bold px-2 hover:text-primary-dark">✓</button>
-              <button onClick={() => setAddingModule(false)} className="text-gray-500 px-1 hover:text-gray-300">✕</button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setAddingModule(true)}
-              className="flex w-full items-center gap-2 rounded-lg border border-primary/30 px-3 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
-            >
-              <PlusIcon className="w-4 h-4" /> Add Module
-            </button>
-          )}
-        </div>
+        {!isStudent && (
+          <div className="px-5 py-6 mt-4 border-t border-slate-200 dark:border-slate-800">
+            {addingModule ? (
+              <div className="flex gap-1">
+                <input
+                  autoFocus
+                  value={newModTitle}
+                  onChange={(e) => setNewModTitle(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleAddModule(); if (e.key === "Escape") setAddingModule(false); }}
+                  placeholder="Module title..."
+                  className="flex-1 rounded-xl border border-brand-500 bg-white dark:bg-slate-800 px-3 py-2 text-sm outline-none"
+                />
+                <button onClick={handleAddModule} className="text-brand-600 font-bold px-2">✓</button>
+                <button onClick={() => setAddingModule(false)} className="text-slate-400 px-1">✕</button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setAddingModule(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 px-3 py-3 text-sm font-bold text-slate-500 transition-all hover:border-brand-500 hover:text-brand-600"
+              >
+                <PlusIcon className="w-4 h-4" /> New Module
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -188,7 +233,7 @@ export default function Sidebar({ courseId, modules }) {
     <>
       {/* Mobile toggle */}
       <button
-        className="fixed left-3 top-3 z-50 rounded-lg bg-slate-100 dark:bg-[#1a1f2e] p-2.5 text-slate-800 dark:text-white shadow-lg md:hidden"
+        className="fixed left-3 top-3 z-50 rounded-xl bg-white dark:bg-slate-900 p-2.5 text-slate-900 dark:text-white shadow-xl border border-slate-200 dark:border-slate-800 md:hidden transition-all active:scale-95"
         onClick={() => setMobileOpen((o) => !o)}
         aria-label={mobileOpen ? "Close course navigation" : "Open course navigation"}
       >
@@ -196,13 +241,13 @@ export default function Sidebar({ courseId, modules }) {
       </button>
 
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/60 z-30" onClick={() => setMobileOpen(false)} />
+        <div className="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-30" onClick={() => setMobileOpen(false)} />
       )}
 
       <aside className={`
-        fixed bottom-0 top-14 z-40 w-[min(86vw,20rem)] flex-shrink-0
-        transition-transform duration-300 md:relative md:top-0 md:h-full md:w-72 xl:w-80
-        ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        fixed bottom-0 top-0 z-40 w-[min(86vw,20rem)] flex-shrink-0
+        transition-transform duration-500 ease-in-out md:relative md:h-full md:w-72 xl:w-80
+        ${mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"}
       `}>
         {sidebar}
       </aside>

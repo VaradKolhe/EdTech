@@ -7,10 +7,10 @@ import Input from "../../components/ui/Input";
 import { useAuth } from "../../context/AuthContext";
 
 export default function StudentRegister() {
-  const { persistAuth, getRoleRedirectPath } = useAuth();
+  const { persistAuth } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    fullName: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -30,7 +30,7 @@ export default function StudentRegister() {
     try {
       const { data } = await registerStudent(form);
       persistAuth(data.user);
-      navigate(getRoleRedirectPath("student"));
+      navigate("/student-onboarding");
     } catch (err) {
       setError(
         err.response?.data?.message || "Registration failed. Please try again."
@@ -53,11 +53,11 @@ export default function StudentRegister() {
         )}
 
         <Input
-          id="fullName"
-          name="fullName"
+          id="name"
+          name="name"
           label="Full Name"
           placeholder="John Doe"
-          value={form.fullName}
+          value={form.name}
           onChange={handleChange}
           required
         />

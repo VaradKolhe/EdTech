@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { saveBlocks, updateSubmodule } from "../store/courseSlice";
+import { useAuth } from "../context/AuthContext";
 import {
   PlusIcon, TrashIcon, ChevronUpIcon, ChevronDownIcon,
   SpeakerWaveIcon, EyeIcon, EyeSlashIcon, CheckIcon,
@@ -111,29 +112,33 @@ function VideoEmbed({ url }) {
 }
 
 /* ── Block header row (shared) ───────────────────────────── */
-function BlockHeader({ label, color, lang, onLangChange, extra, onMoveUp, onMoveDown, onDelete, isFirst, isLast }) {
+function BlockHeader({ label, color, lang, onLangChange, extra, onMoveUp, onMoveDown, onDelete, isFirst, isLast, isStudent }) {
   return (
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 px-3 py-2.5 sm:px-4">
       <span className={`min-w-0 flex-1 text-sm font-bold uppercase tracking-wider ${color}`}>{label}</span>
       <div className="flex flex-wrap items-center justify-end gap-1">
-        <LangTabs active={lang} onChange={onLangChange} />
+        {!isStudent && <LangTabs active={lang} onChange={onLangChange} />}
         {extra}
-        <button onClick={onMoveUp} disabled={isFirst} className="p-1.5 text-gray-600 hover:text-gray-300 disabled:opacity-20 transition-colors">
-          <ChevronUpIcon className="w-3.5 h-3.5" />
-        </button>
-        <button onClick={onMoveDown} disabled={isLast} className="p-1.5 text-gray-600 hover:text-gray-300 disabled:opacity-20 transition-colors">
-          <ChevronDownIcon className="w-3.5 h-3.5" />
-        </button>
-        <button onClick={onDelete} className="p-1.5 text-gray-600 hover:text-red-400 transition-colors">
-          <TrashIcon className="w-3.5 h-3.5" />
-        </button>
+        {!isStudent && (
+          <>
+            <button onClick={onMoveUp} disabled={isFirst} className="p-1.5 text-gray-600 hover:text-gray-300 disabled:opacity-20 transition-colors">
+              <ChevronUpIcon className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={onMoveDown} disabled={isLast} className="p-1.5 text-gray-600 hover:text-gray-300 disabled:opacity-20 transition-colors">
+              <ChevronDownIcon className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={onDelete} className="p-1.5 text-gray-600 hover:text-red-400 transition-colors">
+              <TrashIcon className="w-3.5 h-3.5" />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
 /* ── TEXT block ──────────────────────────────────────────── */
-function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
+function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast, isStudent }) {
   const [collapsed, setCollapsed] = useState(false);
 
   const speak = () => {
@@ -144,12 +149,13 @@ function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
   };
 
   return (
-    <div className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
       <BlockHeader
         label="📝 Text" color="text-blue-400"
         lang={lang} onLangChange={onLangChange}
         isFirst={isFirst} isLast={isLast}
         onMoveUp={onMoveUp} onMoveDown={onMoveDown} onDelete={onDelete}
+        isStudent={isStudent}
         extra={
           <>
             <button onClick={speak} className="p-1.5 text-gray-500 hover:text-primary transition-colors" title="Read aloud">
@@ -162,11 +168,18 @@ function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
         }
       />
       {!collapsed && (
-        <div className="p-3 sm:p-4">
-          <RichTextEditor
-            value={block.content[lang] || ""}
-            onChange={(val) => onChange({ content: { ...block.content, [lang]: val } })}
-          />
+        <div className="p-5 sm:p-7">
+          {isStudent ? (
+            <div 
+              className="prose dark:prose-invert prose-slate max-w-none text-slate-700 dark:text-slate-300 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: block.content[lang] || block.content.en || "<p className='italic text-slate-500'>No content available in this language.</p>" }}
+            />
+          ) : (
+            <RichTextEditor
+              value={block.content[lang] || ""}
+              onChange={(val) => onChange({ content: { ...block.content, [lang]: val } })}
+            />
+          )}
         </div>
       )}
     </div>
@@ -174,42 +187,58 @@ function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
 }
 
 /* ── VIDEO block ─────────────────────────────────────────── */
-function VideoBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
-  const [preview, setPreview] = useState(false);
+function VideoBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast, isStudent }) {
+  const [preview, setPreview] = useState(true);
   return (
-    <div className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
       <BlockHeader
         label="🎬 Video" color="text-purple-400"
         lang={lang} onLangChange={onLangChange}
         isFirst={isFirst} isLast={isLast}
         onMoveUp={onMoveUp} onMoveDown={onMoveDown} onDelete={onDelete}
+        isStudent={isStudent}
         extra={
-          <button onClick={() => setPreview((p) => !p)} className="p-1.5 text-gray-500 hover:text-primary transition-colors" title="Toggle preview">
-            {preview ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
-          </button>
+          !isStudent && (
+            <button onClick={() => setPreview((p) => !p)} className="p-1.5 text-gray-500 hover:text-primary transition-colors" title="Toggle preview">
+              {preview ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
+            </button>
+          )
         }
       />
-      <div className="space-y-3 p-4 sm:p-5">
-        <input
-          value={block.videoTitle[lang] || ""}
-          onChange={(e) => onChange({ videoTitle: { ...block.videoTitle, [lang]: e.target.value } })}
-          placeholder={`Video title (${LANG_LABEL[lang]})...`}
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
-        />
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            value={block.videoUrl || ""}
-            onChange={(e) => onChange({ videoUrl: e.target.value })}
-            placeholder="YouTube or S3 URL..."
-            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
-          />
-          <input
-            value={block.videoDuration || ""}
-            onChange={(e) => onChange({ videoDuration: e.target.value })}
-            placeholder="Duration"
-            className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-base text-white outline-none placeholder-gray-500 focus:border-primary sm:w-32"
-          />
-        </div>
+      <div className="p-5 sm:p-7">
+        {!isStudent ? (
+          <div className="space-y-4 mb-6">
+            <input
+              value={block.videoTitle[lang] || ""}
+              onChange={(e) => onChange({ videoTitle: { ...block.videoTitle, [lang]: e.target.value } })}
+              placeholder={`Video title (${LANG_LABEL[lang]})...`}
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
+            />
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <input
+                value={block.videoUrl || ""}
+                onChange={(e) => onChange({ videoUrl: e.target.value })}
+                placeholder="YouTube or S3 URL..."
+                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
+              />
+              <input
+                value={block.videoDuration || ""}
+                onChange={(e) => onChange({ videoDuration: e.target.value })}
+                placeholder="Duration"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder-gray-500 focus:border-primary sm:w-32"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4">
+            <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
+              {block.videoTitle[lang] || block.videoTitle.en || "Course Video"}
+            </h4>
+            {block.videoDuration && (
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{block.videoDuration}</span>
+            )}
+          </div>
+        )}
         {preview && block.videoUrl && <VideoEmbed url={block.videoUrl} />}
       </div>
     </div>
@@ -217,8 +246,8 @@ function VideoBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, o
 }
 
 /* ── QUIZ block ──────────────────────────────────────────── */
-function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast }) {
-  const [preview, setPreview] = useState(false);
+function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast, isStudent }) {
+  const [preview, setPreview] = useState(isStudent);
   const [answers, setAnswers] = useState({});
 
   const updateQuestion = (qi, patch) =>
@@ -236,67 +265,73 @@ function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
   const removeQuestion = (qi) => onChange({ quizQuestions: block.quizQuestions.filter((_, i) => i !== qi) });
 
   return (
-    <div className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
       <BlockHeader
         label={`🧠 Quiz · ${block.quizQuestions?.length || 0} questions`} color="text-yellow-400"
         lang={lang} onLangChange={onLangChange}
         isFirst={isFirst} isLast={isLast}
         onMoveUp={onMoveUp} onMoveDown={onMoveDown} onDelete={onDelete}
+        isStudent={isStudent}
         extra={
-          <button onClick={() => { setPreview((p) => !p); setAnswers({}); }} className="p-1.5 text-gray-500 hover:text-primary transition-colors" title="Preview">
-            {preview ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
-          </button>
+          !isStudent && (
+            <button onClick={() => { setPreview((p) => !p); setAnswers({}); }} className="p-1.5 text-gray-500 hover:text-primary transition-colors" title="Preview">
+              {preview ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
+            </button>
+          )
         }
       />
-      <div className="space-y-4 p-4 sm:p-5">
+      <div className="space-y-6 p-5 sm:p-7">
         {preview ? (
           (block.quizQuestions || []).map((q, qi) => (
-            <div key={qi} className="rounded-lg bg-white/5 p-3 sm:p-4">
-              <p className="font-semibold text-white mb-3">{q.question[lang] || q.question.en || `Question ${qi + 1}`}</p>
-              <div className="space-y-2">
+            <div key={qi} className="rounded-2xl bg-slate-50 dark:bg-white/5 p-5 sm:p-6 border border-slate-100 dark:border-white/5">
+              <p className="font-bold text-lg text-slate-900 dark:text-white mb-5">
+                <span className="text-brand-600 dark:text-brand-400 mr-2">Q{qi + 1}.</span>
+                {q.question[lang] || q.question.en || `Question ${qi + 1}`}
+              </p>
+              <div className="grid grid-cols-1 gap-3">
                 {q.options.filter(Boolean).map((opt, oi) => {
                   const sel = answers[qi];
-                  let cls = "w-full text-left px-4 py-2 rounded-lg text-sm border transition-all ";
-                  if (!sel) cls += "border-white/10 text-gray-300 hover:border-primary hover:bg-primary/10";
-                  else if (sel === opt && opt === q.correctAnswer) cls += "border-green-500 bg-green-500/20 text-green-300";
-                  else if (sel === opt) cls += "border-red-500 bg-red-500/20 text-red-300";
-                  else if (opt === q.correctAnswer) cls += "border-green-500/50 bg-green-500/10 text-green-400";
-                  else cls += "border-white/5 text-gray-500 opacity-60";
+                  let cls = "w-full text-left px-5 py-3.5 rounded-xl text-sm font-semibold border transition-all ";
+                  if (!sel) cls += "border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10";
+                  else if (sel === opt && opt === q.correctAnswer) cls += "border-green-500 bg-green-500/10 text-green-600 dark:text-green-300";
+                  else if (sel === opt) cls += "border-red-500 bg-red-500/10 text-red-600 dark:text-red-300";
+                  else if (opt === q.correctAnswer) cls += "border-green-500/50 bg-green-500/5 dark:bg-green-500/10 text-green-500 dark:text-green-400";
+                  else cls += "border-slate-100 dark:border-white/5 text-slate-400 dark:text-gray-500 opacity-60";
                   return <button key={oi} onClick={() => !sel && setAnswers((a) => ({ ...a, [qi]: opt }))} className={cls}>{opt}</button>;
                 })}
               </div>
               {answers[qi] && (
-                <p className={`text-xs font-semibold mt-2 ${answers[qi] === q.correctAnswer ? "text-green-400" : "text-red-400"}`}>
-                  {answers[qi] === q.correctAnswer ? "✓ Correct!" : `✗ Correct: ${q.correctAnswer}`}
-                </p>
+                <div className={`mt-5 p-3 rounded-lg text-xs font-bold flex items-center gap-2 ${answers[qi] === q.correctAnswer ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400"}`}>
+                  {answers[qi] === q.correctAnswer ? "✓ Excellent! Correct answer." : `✗ Incorrect. The correct answer was: ${q.correctAnswer}`}
+                </div>
               )}
             </div>
           ))
         ) : (
           <>
             {(block.quizQuestions || []).map((q, qi) => (
-              <div key={q._tempId || qi} className="space-y-3 rounded-lg bg-white/5 p-3 sm:p-4">
+              <div key={q._tempId || qi} className="space-y-4 rounded-2xl bg-white/5 p-5 sm:p-6 border border-white/10">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-400">Q{qi + 1}</span>
-                  <button onClick={() => removeQuestion(qi)} className="text-gray-600 hover:text-red-400 transition-colors">
-                    <TrashIcon className="w-3.5 h-3.5" />
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-500">Question {qi + 1}</span>
+                  <button onClick={() => removeQuestion(qi)} className="text-slate-500 hover:text-red-500 transition-colors">
+                    <TrashIcon className="w-4 h-4" />
                   </button>
                 </div>
                 <input
                   value={q.question[lang] || ""}
                   onChange={(e) => updateQuestion(qi, { question: { ...q.question, [lang]: e.target.value } })}
-                  placeholder={`Question (${LANG_LABEL[lang]})...`}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
+                  placeholder={`Question text (${LANG_LABEL[lang]})...`}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
                 />
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {q.options.map((opt, oi) => (
-                    <div key={oi} className="flex items-center gap-2">
+                    <div key={oi} className="flex items-center gap-3">
                       <input
                         type="radio"
                         name={`correct-${block._tempId || block._id}-${qi}`}
                         checked={q.correctAnswer === opt && opt !== ""}
                         onChange={() => updateQuestion(qi, { correctAnswer: opt })}
-                        className="accent-primary w-4 h-4 flex-shrink-0"
+                        className="accent-brand-600 w-4 h-4 flex-shrink-0"
                       />
                       <input
                         value={opt}
@@ -305,19 +340,23 @@ function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
                           if (q.correctAnswer === opt) updateQuestion(qi, { correctAnswer: e.target.value });
                         }}
                         placeholder={`Option ${oi + 1}`}
-                        className="min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
+                        className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white outline-none placeholder-gray-500 focus:border-primary"
                       />
                     </div>
                   ))}
                 </div>
-                {q.correctAnswer && <p className="text-xs text-green-400">✓ Correct: {q.correctAnswer}</p>}
+                {q.correctAnswer && (
+                  <div className="flex items-center gap-2 text-xs font-bold text-green-400 bg-green-400/10 px-3 py-1.5 rounded-lg w-fit">
+                    <CheckIcon className="h-3 w-3" /> Correct: {q.correctAnswer}
+                  </div>
+                )}
               </div>
             ))}
             <button
               onClick={addQuestion}
-              className="flex items-center gap-2 w-full px-4 py-2.5 border border-dashed border-white/20 rounded-lg text-sm text-gray-400 hover:border-primary hover:text-primary transition-colors justify-center"
+              className="flex items-center gap-2 w-full px-4 py-4 border-2 border-dashed border-white/10 rounded-2xl text-sm font-bold text-slate-500 hover:border-brand-500 hover:text-brand-500 transition-colors justify-center"
             >
-              <PlusIcon className="w-4 h-4" /> Add Question
+              <PlusIcon className="w-5 h-5" /> Add New Question
             </button>
           </>
         )}
@@ -329,6 +368,7 @@ function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
 /* ── Main ContentEditor ──────────────────────────────────── */
 export default function ContentEditor() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const { activeSubmoduleId, submoduleContents, contentLoading, course } = useSelector((s) => s.course);
   const [lang, setLang] = useState("en");
   const [draft, setDraft] = useState({ submoduleId: null, sourceBlocks: EMPTY_BLOCKS, blocks: [] });
@@ -337,6 +377,8 @@ export default function ContentEditor() {
   const [saveError, setSaveError] = useState("");
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleVal, setTitleVal] = useState("");
+
+  const isStudent = user?.role === "student";
 
   const contentData = submoduleContents[activeSubmoduleId];
   const sourceBlocks = contentData?.blocks ?? EMPTY_BLOCKS;
@@ -350,11 +392,12 @@ export default function ContentEditor() {
   }
 
   const setBlocks = useCallback((updater) => {
+    if (isStudent) return;
     setDraft((prev) => ({
       ...prev,
       blocks: typeof updater === "function" ? updater(prev.blocks) : updater,
     }));
-  }, []);
+  }, [isStudent]);
 
   const addBlock = (type) =>
     setBlocks((prev) => [...prev, newBlock(type, prev.length)]);
@@ -376,6 +419,7 @@ export default function ContentEditor() {
     });
 
   const handleSave = async () => {
+    if (isStudent) return;
     setSaving(true);
     setSaveError("");
     const clean = blocks.map((block, i) => {
@@ -403,13 +447,13 @@ export default function ContentEditor() {
   /* No submodule selected */
   if (!activeSubmoduleId) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center h-full bg-slate-50 dark:bg-[#0e1117]">
-        <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mb-5">
-          <span className="text-4xl">📚</span>
+      <div className="flex-1 flex flex-col items-center justify-center h-full bg-white dark:bg-[#0b0e14]">
+        <div className="w-24 h-24 bg-brand-600/10 rounded-3xl flex items-center justify-center mb-8">
+          <span className="text-5xl">📚</span>
         </div>
-        <h2 className="text-xl font-bold text-gray-200 mb-2">Select a Submodule</h2>
-        <p className="text-gray-500 text-sm text-center max-w-xs">
-          Pick a submodule from the left sidebar to start building your lesson.
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-3">Select a Lesson</h2>
+        <p className="text-slate-500 dark:text-slate-400 text-center max-w-xs font-medium">
+          Choose a submodule from the sidebar to start your learning session.
         </p>
       </div>
     );
@@ -417,8 +461,8 @@ export default function ContentEditor() {
 
   if (contentLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-[#0e1117]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-[#0b0e14]">
+        <div className="w-10 h-10 border-4 border-brand-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -432,52 +476,62 @@ export default function ContentEditor() {
     onMoveDown: () => moveBlock(block._tempId, 1),
     isFirst: idx === 0,
     isLast: idx === blocks.length - 1,
+    isStudent,
   });
 
   return (
-    <div className="flex h-full min-w-0 flex-col bg-slate-50 dark:bg-[#0e1117]">
+    <div className="flex h-full min-w-0 flex-col bg-white dark:bg-[#0b0e14]">
 
-      {/* ── Sticky top toolbar ── */}
-      <div className="flex flex-shrink-0 flex-col gap-3 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#141820] px-4 py-3 sm:px-7 lg:flex-row lg:items-center">
-        <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-        <button onClick={() => addBlock("TEXT")} className="flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-600/20 px-2.5 py-2 text-sm font-semibold text-blue-400 transition-colors hover:bg-blue-600/30 sm:px-4">
-          <PlusIcon className="h-4 w-4" /> Add Text
-        </button>
-        <button onClick={() => addBlock("VIDEO")} className="flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-600/20 px-2.5 py-2 text-sm font-semibold text-purple-400 transition-colors hover:bg-purple-600/30 sm:px-4">
-          <PlusIcon className="h-4 w-4" /> Add Video
-        </button>
-        <button onClick={() => addBlock("QUIZ")} className="flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-yellow-500/30 bg-yellow-600/20 px-2.5 py-2 text-sm font-semibold text-yellow-400 transition-colors hover:bg-yellow-600/30 sm:px-4">
-          <PlusIcon className="h-4 w-4" /> Add Quiz
-        </button>
+      {/* ── Sticky top toolbar (Instructor only) ── */}
+      {!isStudent && (
+        <div className="flex flex-shrink-0 flex-col gap-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0b0e14] px-6 py-4 lg:flex-row lg:items-center">
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+            <button onClick={() => addBlock("TEXT")} className="flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-600/10 px-3 py-2 text-xs font-bold text-blue-500 transition-all hover:bg-blue-600/20">
+              <PlusIcon className="h-4 w-4" /> Add Text
+            </button>
+            <button onClick={() => addBlock("VIDEO")} className="flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-purple-500/30 bg-purple-600/10 px-3 py-2 text-xs font-bold text-purple-500 transition-all hover:bg-purple-600/20">
+              <PlusIcon className="h-4 w-4" /> Add Video
+            </button>
+            <button onClick={() => addBlock("QUIZ")} className="flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-yellow-500/30 bg-yellow-600/10 px-3 py-2 text-xs font-bold text-yellow-600 transition-all hover:bg-yellow-600/20">
+              <PlusIcon className="h-4 w-4" /> Add Quiz
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 lg:ml-auto lg:justify-end">
+            <LangTabs active={lang} onChange={setLang} />
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-brand-600/20 transition-all hover:bg-brand-700 disabled:opacity-50"
+            >
+              {saving ? <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> : <CheckIcon className="h-4 w-4" />}
+              {saving ? "Saving..." : "Save Lesson"}
+            </button>
+            {saved && <span className="text-xs text-green-500 font-bold">✓ Saved!</span>}
+            {saveError && <span className="text-xs font-bold text-red-500">{saveError}</span>}
+          </div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 lg:ml-auto lg:justify-end">
-          <LangTabs active={lang} onChange={setLang} />
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
-          >
-            {saving ? <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" /> : <CheckIcon className="h-4 w-4" />}
-            {saving ? "Saving..." : "Save Lesson"}
-          </button>
-          {saved && <span className="text-xs text-green-400 font-semibold">✓ Saved!</span>}
-          {saveError && <span className="text-xs font-semibold text-red-400">{saveError}</span>}
-        </div>
-      </div>
+      )}
 
       {/* ── Lesson title ── */}
-      <div className="flex-shrink-0 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#141820] px-4 py-4 sm:px-7">
-        {editingTitle ? (
+      <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0b0e14] px-6 py-6 sm:px-10">
+        {isStudent ? (
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="truncate text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">
+              {activeSubmodule?.title}
+            </h1>
+            <LangTabs active={lang} onChange={setLang} />
+          </div>
+        ) : editingTitle ? (
           <input
             autoFocus value={titleVal}
             onChange={(e) => setTitleVal(e.target.value)}
             onBlur={handleRenameSubmodule}
             onKeyDown={(e) => e.key === "Enter" && handleRenameSubmodule()}
-            className="w-full border-b-2 border-primary bg-transparent text-xl font-bold text-white outline-none sm:text-2xl"
+            className="w-full border-b-2 border-brand-600 bg-transparent text-2xl font-black text-slate-900 dark:text-white outline-none sm:text-3xl"
           />
         ) : (
           <h1
-            className="cursor-pointer truncate text-xl font-bold text-white transition-colors hover:text-primary sm:text-2xl"
+            className="cursor-pointer truncate text-2xl font-black text-slate-900 dark:text-white transition-colors hover:text-brand-600 sm:text-3xl"
             onClick={() => { setEditingTitle(true); setTitleVal(activeSubmodule?.title || ""); }}
             title="Click to rename"
           >
@@ -487,28 +541,32 @@ export default function ContentEditor() {
       </div>
 
       {/* ── Blocks area ── */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-7">
+      <div className="flex-1 overflow-y-auto px-6 py-8 sm:px-10 sm:py-12 bg-slate-50 dark:bg-[#080b11]">
         {blocks.length === 0 ? (
           <div className="flex h-full min-h-[420px] flex-col items-center justify-center text-center">
-            <div className="mb-5 flex h-24 w-24 items-center justify-center rounded-2xl border border-white/10 bg-primary/10">
-              <span className="text-5xl">📚</span>
+            <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-brand-600/10">
+              <span className="text-5xl">📖</span>
             </div>
-            <h3 className="mb-2 text-2xl font-bold text-gray-200">Start building this lesson</h3>
-            <p className="mb-7 max-w-md text-base leading-6 text-gray-500">Add text, video, or quiz blocks to create a complete learning experience.</p>
-            <div className="grid w-full max-w-xl grid-cols-1 gap-3 sm:grid-cols-3">
-              <button onClick={() => addBlock("TEXT")} className="flex items-center justify-center gap-2 rounded-lg border border-blue-500/30 bg-blue-600/20 px-4 py-3 text-base font-semibold text-blue-400 transition-colors hover:bg-blue-600/30">
-                <PlusIcon className="w-4 h-4" /> Add Text
-              </button>
-              <button onClick={() => addBlock("VIDEO")} className="flex items-center justify-center gap-2 rounded-lg border border-purple-500/30 bg-purple-600/20 px-4 py-3 text-base font-semibold text-purple-400 transition-colors hover:bg-purple-600/30">
-                <PlusIcon className="w-4 h-4" /> Add Video
-              </button>
-              <button onClick={() => addBlock("QUIZ")} className="flex items-center justify-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-600/20 px-4 py-3 text-base font-semibold text-yellow-400 transition-colors hover:bg-yellow-600/30">
-                <PlusIcon className="w-4 h-4" /> Add Quiz
-              </button>
-            </div>
+            <h3 className="mb-2 text-2xl font-black text-slate-900 dark:text-white">This lesson is empty</h3>
+            <p className="mb-10 max-w-sm text-base text-slate-500 font-medium leading-relaxed">
+              {isStudent ? "The instructor hasn't added any content to this lesson yet." : "Add text, video, or quiz blocks to create a complete learning experience."}
+            </p>
+            {!isStudent && (
+              <div className="grid w-full max-w-lg grid-cols-1 gap-4 sm:grid-cols-3">
+                <button onClick={() => addBlock("TEXT")} className="flex items-center justify-center gap-2 rounded-2xl border border-blue-500/20 bg-white dark:bg-slate-900 px-4 py-4 text-sm font-bold text-blue-500 shadow-sm transition-all hover:bg-blue-50">
+                  <PlusIcon className="w-4 h-4" /> Add Text
+                </button>
+                <button onClick={() => addBlock("VIDEO")} className="flex items-center justify-center gap-2 rounded-2xl border border-purple-500/20 bg-white dark:bg-slate-900 px-4 py-4 text-sm font-bold text-purple-500 shadow-sm transition-all hover:bg-purple-50">
+                  <PlusIcon className="w-4 h-4" /> Add Video
+                </button>
+                <button onClick={() => addBlock("QUIZ")} className="flex items-center justify-center gap-2 rounded-2xl border border-yellow-500/20 bg-white dark:bg-slate-900 px-4 py-4 text-sm font-bold text-yellow-600 shadow-sm transition-all hover:bg-yellow-50">
+                  <PlusIcon className="w-4 h-4" /> Add Quiz
+                </button>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="mx-auto max-w-6xl space-y-5">
+          <div className="mx-auto max-w-5xl space-y-10">
             {blocks.map((block, idx) => {
               const props = { key: block._tempId, block, ...sharedBlockProps(block, idx) };
               if (block.type === "TEXT") return <TextBlock {...props} />;

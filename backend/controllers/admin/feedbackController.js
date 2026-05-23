@@ -1,17 +1,15 @@
-import Feedback from "../../models/Feedback.js";
+import Rating from "../../models/Rating.js";
 import Course from "../../models/Course.js";
 
 export const getFeedbackAnalytics = async (_req, res) => {
   try {
     const [avgAgg, totalCount, courseWise] = await Promise.all([
-      Feedback.aggregate([
-        { $group: { _id: null, average: { $avg: "$rating" } } },
-      ]),
-      Feedback.countDocuments(),
-      Feedback.aggregate([
+      Rating.aggregate([{ $group: { _id: null, average: { $avg: "$rating" } } }]),
+      Rating.countDocuments(),
+      Rating.aggregate([
         {
           $group: {
-            _id: "$course",
+            _id: "$courseId",
             averageRating: { $avg: "$rating" },
             count: { $sum: 1 },
           },
@@ -21,20 +19,16 @@ export const getFeedbackAnalytics = async (_req, res) => {
       ]),
     ]);
 
-    const courseIds = courseWise.map((c) => c._id);
-    const courses = await Course.find({ _id: { $in: courseIds } }).select(
-      "title"
-    );
-    const titleMap = Object.fromEntries(
-      courses.map((c) => [c._id.toString(), c.title])
-    );
+    const courses = await Course.find({ _id: { $in: courseWise.map((c) => c._id) } }).select("title");
+    const titleMap = Object.fromEntries(courses.map((c) => [String(c._id), c.title?.en || "Untitled course"]));
 
     res.json({
       averageRating: Number((avgAgg[0]?.average ?? 0).toFixed(2)),
       totalFeedback: totalCount,
+      totalRatings: totalCount,
       courseWiseRatings: courseWise.map((row) => ({
         courseId: row._id,
-        courseTitle: titleMap[row._id?.toString()] || "Unknown Course",
+        courseTitle: titleMap[String(row._id)] || "Unknown Course",
         averageRating: Number(row.averageRating.toFixed(2)),
         count: row.count,
       })),

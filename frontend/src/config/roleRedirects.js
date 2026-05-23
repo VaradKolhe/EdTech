@@ -1,12 +1,20 @@
-/**
- * Post-auth redirect paths — consumed by dashboard branches on merge.
- * Update here only; do not hardcode paths in auth pages.
- */
 export const ROLE_REDIRECT_PATHS = {
   student: "/student-dashboard",
-  teacher: "/teacher-dashboard",
+  instructor: "/instructor-dashboard",
   admin: "/admin-dashboard",
 };
 
-export const getRoleRedirectPath = (role) =>
-  ROLE_REDIRECT_PATHS[role] ?? "/";
+export const getRoleRedirectPath = (role) => ROLE_REDIRECT_PATHS[role] ?? "/";
+
+export const isStudentProfileComplete = (profile = {}) =>
+  Boolean(
+    profile.ageGroup &&
+      profile.educationLevel &&
+      Array.isArray(profile.preferredStreams) &&
+      profile.preferredStreams.length > 0 &&
+      profile.skillLevel &&
+      profile.careerGoal &&
+      profile.budgetPreference &&
+      profile.preferredDifficulty &&
+      profile.preferredLanguage
+  );
