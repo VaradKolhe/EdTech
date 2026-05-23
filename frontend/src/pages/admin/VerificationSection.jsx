@@ -15,7 +15,7 @@ const STATUS_BADGE = {
 
 export default function VerificationSection() {
   const [instructors, setInstructors] = useState([]);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("PENDING");
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {

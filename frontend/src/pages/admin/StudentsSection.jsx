@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { getStudents, deleteStudent } from "../../api/adminApi";
+import { getStudents, deleteStudent, getUserProfile } from "../../api/adminApi";
 import Button from "../../components/ui/Button";
+import UserDetailModal from "../../components/admin/UserDetailModal";
 
 export default function StudentsSection() {
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -22,7 +25,18 @@ export default function StudentsSection() {
     return () => clearTimeout(t);
   }, [load]);
 
-  const handleDelete = async (id) => {
+  const handleRowClick = async (id) => {
+    setLoadingProfile(true);
+    try {
+      const { data } = await getUserProfile(id);
+      setSelectedUser(data);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
     if (!confirm("Remove this student?")) return;
     await deleteStudent(id);
     load();
@@ -37,13 +51,16 @@ export default function StudentsSection() {
           </h2>
           <p className="text-slate-500">Search, view, and remove students</p>
         </div>
-        <input
-          type="search"
-          placeholder="Search by name or email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-xs rounded-xl border border-slate-300 px-4 py-2 dark:border-slate-600 dark:bg-slate-800"
-        />
+        <div className="flex items-center gap-3">
+          {loadingProfile && <span className="text-xs font-bold text-brand-600 animate-pulse uppercase tracking-widest">Fetching profile...</span>}
+          <input
+            type="search"
+            placeholder="Search by name or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full max-w-xs rounded-xl border border-slate-300 px-4 py-2 dark:border-slate-600 dark:bg-slate-800"
+          />
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -71,15 +88,19 @@ export default function StudentsSection() {
               </tr>
             ) : (
               students.map((s) => (
-                <tr key={s._id} className="border-b dark:border-slate-700">
-                  <td className="px-4 py-3 font-medium">{s.name}</td>
+                <tr 
+                  key={s._id} 
+                  className="group border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-colors"
+                  onClick={() => handleRowClick(s._id)}
+                >
+                  <td className="px-4 py-3 font-medium group-hover:text-brand-600">{s.name}</td>
                   <td className="px-4 py-3">{s.email}</td>
                   <td className="px-4 py-3">{s.enrolledCourseCount ?? 0}</td>
                   <td className="px-4 py-3">
                     <Button
                       size="sm"
                       variant="danger"
-                      onClick={() => handleDelete(s._id)}
+                      onClick={(e) => handleDelete(e, s._id)}
                     >
                       Delete
                     </Button>
@@ -90,6 +111,14 @@ export default function StudentsSection() {
           </tbody>
         </table>
       </div>
+
+      {selectedUser && (
+        <UserDetailModal 
+          user={selectedUser.user} 
+          courses={selectedUser.courses} 
+          onClose={() => setSelectedUser(null)} 
+        />
+      )}
     </div>
   );
 }

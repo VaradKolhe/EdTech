@@ -29,6 +29,7 @@ export const deleteCertificate = (id) => api.delete(`/admin/certificates/${id}`)
 
 export const moderateUser = (id, role) =>
   api.delete(`/admin/moderation/users/${id}`, { params: { role } });
+export const getUserProfile = (id) => api.get(`/admin/moderation/users/${id}`);
 export const moderateCourse = (id) =>
   api.delete(`/admin/moderation/courses/${id}`);
 
