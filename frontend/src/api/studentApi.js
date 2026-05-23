@@ -1,9 +1,10 @@
 import api from "./axios";
 
 export const getStudentProfile = () => api.get("/student/profile");
+
+export const updateStudentProfile = (data) => api.patch("/student/profile", data);
+
 export const getOnboardingStatus = () => api.get("/student/onboarding/status");
-export const saveOnboardingProfile = (data) =>
-  api.post("/student/onboarding/profile", data);
 export const getStudentDashboard = (params) => api.get("/student/dashboard", { params });
 
 export const getStudentEnrollments = (params) =>

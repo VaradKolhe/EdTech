@@ -4,6 +4,8 @@ import {
   registerInstructor,
   login,
   getMe,
+  updateProfile,
+  changePassword,
   forgotPassword,
   resetPassword,
 } from "../controllers/authController.js";
@@ -17,6 +19,8 @@ router.post("/register/instructor", registerInstructor);
 router.post("/register/teacher", registerInstructor);
 router.post("/login", login);
 router.get("/me", protect, getMe);
+router.patch("/profile", protect, updateProfile);
+router.post("/change-password", protect, changePassword);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 

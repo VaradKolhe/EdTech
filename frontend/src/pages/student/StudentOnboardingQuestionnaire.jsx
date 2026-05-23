@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar";
-import { saveOnboardingProfile } from "../../api/studentApi";
+import { updateStudentProfile } from "../../api/studentApi";
 import { useAuth } from "../../context/AuthContext";
 import axios from "../../api/axios";
 
@@ -40,7 +40,7 @@ export default function StudentOnboardingQuestionnaire() {
     setSaving(true);
     setError("");
     try {
-      const { data } = await saveOnboardingProfile(form);
+      const { data } = await updateStudentProfile(form);
       persistAuth({ ...user, profile: data.profile });
       navigate("/student-dashboard");
     } catch (err) {

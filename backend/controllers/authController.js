@@ -124,6 +124,42 @@ export const login = async (req, res) => {
   }
 };
 
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current and new passwords required" });
+    }
+
+    const user = await User.findById(req.user._id).select("+passwordHash");
+    if (!user.comparePassword(currentPassword)) {
+      return res.status(401).json({ message: "Invalid current password" });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Change password failed" });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, profileImageUrl } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (name) user.name = name;
+    if (profileImageUrl !== undefined) user.profileImageUrl = profileImageUrl;
+
+    await user.save();
+    res.json({ message: "Profile updated", user: publicUser(user) });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Profile update failed" });
+  }
+};
+
 export const getMe = async (req, res) => {
   res.json({ user: publicUser(req.user) });
 };

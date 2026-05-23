@@ -15,7 +15,7 @@ import {
   getStudentEnrollments,
   getStudentProfile,
   rateCourse,
-  saveOnboardingProfile,
+  updateStudentProfile,
   searchStudentCourses,
   submitQuiz,
   getQuiz,
@@ -32,8 +32,8 @@ const router = express.Router();
 router.use(protect, authorizeRoles("student"));
 
 router.get("/profile", getStudentProfile);
+router.patch("/profile", updateStudentProfile);
 router.get("/onboarding/status", getOnboardingStatus);
-router.post("/onboarding/profile", saveOnboardingProfile);
 router.get("/dashboard", getStudentDashboardData);
 
 router.get("/enrollments", getStudentEnrollments);
