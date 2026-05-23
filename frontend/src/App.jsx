@@ -24,6 +24,7 @@ import ModerationSection from "./pages/admin/ModerationSection";
 import ReportsSection from "./pages/admin/ReportsSection";
 import CoursesPage from "./pages/CoursesPage";
 import DashboardPage from "./pages/DashboardPage";
+import CourseEditor from "./pages/instructor/CourseEditor";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import MyCourses from "./pages/student/MyCourses";
 import BrowseCourses from "./pages/student/BrowseCourses";
@@ -31,7 +32,7 @@ import CourseDetails from "./pages/student/CourseDetails";
 import CoursePlayer from "./pages/student/CoursePlayer";
 import PaymentSuccess from "./pages/student/PaymentSuccess";
 import PaymentFailure from "./pages/student/PaymentFailure";
-import StudentProfile from "./pages/student/StudentProfile";
+import ProfilePage from "./pages/ProfilePage";
 import StudentOnboardingQuestionnaire from "./pages/student/StudentOnboardingQuestionnaire";
 
 function App() {
@@ -87,6 +88,15 @@ function App() {
               />
 
               <Route
+                path="/courses/:courseId/edit"
+                element={
+                  <ProtectedRoute allowedRoles={["instructor", "admin"]}>
+                    <CourseEditor />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
                 path="/instructor-dashboard"
                 element={
                   <ProtectedRoute allowedRoles={["instructor"]}>
@@ -132,7 +142,7 @@ function App() {
               <Route
                 path="/student-dashboard/courses/:courseId"
                 element={
-                  <ProtectedRoute allowedRoles={["student"]}>
+                  <ProtectedRoute allowedRoles={["student", "admin"]}>
                     <CourseDetails />
                   </ProtectedRoute>
                 }
@@ -161,11 +171,12 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              
               <Route
-                path="/student-dashboard/profile"
+                path="/profile"
                 element={
-                  <ProtectedRoute allowedRoles={["student"]}>
-                    <StudentProfile />
+                  <ProtectedRoute>
+                    <ProfilePage />
                   </ProtectedRoute>
                 }
               />

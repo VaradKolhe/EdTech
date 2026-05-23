@@ -10,6 +10,7 @@ import {
   saveCourseContent,
   updateCourse,
 } from "../controllers/courseController.js";
+import { getCourseRatings } from "../controllers/studentController.js";
 
 const router = express.Router();
 
@@ -22,6 +23,7 @@ router.get("/courses/:id", getCourseById);
 router.put("/courses/:id", updateCourse);
 router.put("/courses/:courseId/content", saveCourseContent);
 router.get("/courses/:courseId/outline", getCourseOutline);
+router.get("/courses/:courseId/ratings", getCourseRatings);
 router.get(
   "/courses/:courseId/modules/:moduleId/submodules/:submoduleId/content",
   getSubmoduleContent

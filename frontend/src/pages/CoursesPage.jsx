@@ -101,56 +101,80 @@ export default function CoursesPage() {
         {showForm && (
           <form
             onSubmit={handleCreate}
-            className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-[#161b22]"
+            className="mb-8 rounded-3xl border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-[#161b22] shadow-xl"
           >
-            <div className="grid gap-4 md:grid-cols-2">
-              <input
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Course title"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                required
-              />
-              <select
-                value={form.difficulty}
-                onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              >
-                <option>Beginner</option>
-                <option>Intermediate</option>
-                <option>Advanced</option>
-              </select>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Course description"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white md:col-span-2"
-                rows={3}
-              />
-              <input
-                type="number"
-                min="0"
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
-                placeholder="Price"
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-              <select
-                value={form.languageAvailable[0]}
-                onChange={(e) => setForm({ ...form, languageAvailable: [e.target.value] })}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              >
-                <option value="en">English</option>
-                <option value="hi">Hindi</option>
-                <option value="mr">Marathi</option>
-              </select>
+            <div className="mb-6 border-b border-slate-100 pb-4 dark:border-slate-800">
+              <h2 className="text-xl font-black text-slate-900 dark:text-white">Create New Course</h2>
+              <p className="text-sm text-slate-500">Provide the basic details to start building your course.</p>
             </div>
-            {error && <p className="mt-4 text-sm font-bold text-rose-600">{error}</p>}
-            <div className="mt-5 flex gap-3">
-              <button disabled={saving} className="rounded-xl bg-brand-600 px-5 py-3 text-sm font-black text-white disabled:opacity-60">
-                {saving ? "Creating..." : "Create"}
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Course Title</label>
+                <input
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  placeholder="e.g. Advanced Java Patterns"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:border-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Difficulty Level</label>
+                <select
+                  value={form.difficulty}
+                  onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:border-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                >
+                  <option>Beginner</option>
+                  <option>Intermediate</option>
+                  <option>Advanced</option>
+                </select>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Course Description</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="What will students learn in this course?"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:border-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Price (INR)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  placeholder="0 for Free"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:border-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Primary Language</label>
+                <select
+                  value={form.languageAvailable[0]}
+                  onChange={(e) => setForm({ ...form, languageAvailable: [e.target.value] })}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:border-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                >
+                  <option value="en">English</option>
+                  <option value="hi">Hindi</option>
+                  <option value="mr">Marathi</option>
+                </select>
+              </div>
+            </div>
+            {error && <p className="mt-4 text-sm font-bold text-rose-600 bg-rose-50 px-4 py-2 rounded-lg">{error}</p>}
+            <div className="mt-8 flex gap-4">
+              <button disabled={saving} className="rounded-xl bg-brand-600 px-8 py-3 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-brand-600/20 hover:bg-brand-700 disabled:opacity-60 transition-all">
+                {saving ? "Creating..." : "Create Course"}
               </button>
-              <button type="button" onClick={() => setShowForm(false)} className="rounded-xl bg-slate-100 px-5 py-3 text-sm font-bold text-slate-600 dark:bg-slate-800">
+              <button type="button" onClick={() => setShowForm(false)} className="rounded-xl bg-slate-100 px-8 py-3 text-sm font-black uppercase tracking-widest text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 transition-all">
                 Cancel
               </button>
             </div>

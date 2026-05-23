@@ -20,6 +20,7 @@ import {
 import {
   removeUser,
   removeCourse,
+  getUserProfile,
 } from "../controllers/admin/moderationController.js";
 
 const router = express.Router();
@@ -52,6 +53,7 @@ router.patch("/certificates/:id/status", updateCertificateStatus);
 router.delete("/certificates/:id", deleteCertificate);
 
 router.delete("/moderation/users/:id", removeUser);
+router.get("/moderation/users/:id", getUserProfile);
 router.delete("/moderation/courses/:id", removeCourse);
 
 export default router;

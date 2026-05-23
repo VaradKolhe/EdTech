@@ -112,6 +112,24 @@ const defaultCoursePayload = async (body, user) => {
 
 export const createCourse = async (req, res) => {
   try {
+    // TC-11: Enforce teacher verification
+    if (req.user.role === "instructor" && req.user.instructorProfile?.verification?.status !== "APPROVED") {
+      return res.status(403).json({ message: "Account not verified. Await admin approval" });
+    }
+
+    // TC-10: Strict title validation
+    const titleValue = req.body.title;
+    let titleEn = "";
+    if (typeof titleValue === "string") {
+      titleEn = titleValue;
+    } else if (titleValue && typeof titleValue === "object") {
+      titleEn = titleValue.en || "";
+    }
+
+    if (!String(titleEn || "").trim()) {
+      return res.status(400).json({ message: "Course title is required and cannot be empty" });
+    }
+
     const payload = await defaultCoursePayload(req.body, req.user);
     const course = await Course.create(payload);
     res.status(201).json(course);

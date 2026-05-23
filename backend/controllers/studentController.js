@@ -69,79 +69,93 @@ const calculateProgress = (course, completedBlocks = []) => {
   );
 };
 
-const normalizeCourse = (course, lang = "en", enrollment = null) => ({
-  _id: course._id,
-  title: localize(course.title, lang, "Untitled course"),
-  description: localize(course.description, lang, ""),
-  shortDescription: localize(course.shortDescription, lang, ""),
-  thumbnailUrl: course.thumbnailUrl || "",
-  instructor: course.instructorId
-    ? {
-        _id: course.instructorId._id,
-        name: course.instructorId.name,
-        email: course.instructorId.email,
-      }
-    : null,
-  category: localize(course.categoryId?.name, lang, "General"),
-  categoryId: course.categoryId?._id || course.categoryId,
-  tags: course.tags?.[lang] || course.tags?.en || [],
-  difficulty: course.difficulty,
-  price: course.price,
-  currency: course.currency,
-  isPaid: course.isPaid,
-  languageAvailable: course.languageAvailable || [],
-  averageRating: course.metrics?.averageRating || 0,
-  totalRatings: course.metrics?.totalRatings || 0,
-  totalEnrollments: course.metrics?.totalEnrollments || 0,
-  status: course.status,
-  enrollment: enrollment
-    ? {
-        _id: enrollment._id,
-        status: enrollment.status,
-        accessStatus: enrollment.accessStatus,
-        progressPercentage: enrollment.progressPercentage,
-        lastAccessed: enrollment.lastAccessed,
-      }
-    : null,
-});
+const normalizeCourse = (course, lang = "en", enrollment = null) => {
+  const isLanguageAvailable =
+    lang === "en" || course.translationStatus?.[lang] === "COMPLETED";
+  const displayLang = isLanguageAvailable ? lang : "en";
 
-const normalizeCourseDetail = (course, lang = "en", enrollment = null) => ({
-  ...normalizeCourse(course, lang, enrollment),
-  modules: (course.modules || [])
-    .slice()
-    .sort((a, b) => a.order - b.order)
-    .map((module) => ({
-      moduleId: module.moduleId,
-      order: module.order,
-      title: localize(module.moduleTitle, lang, "Module"),
-      description: localize(module.moduleDescription, lang, ""),
-      submodules: (module.submodules || [])
-        .slice()
-        .sort((a, b) => a.order - b.order)
-        .map((submodule) => ({
-          submoduleId: submodule.submoduleId,
-          order: submodule.order,
-          title: localize(submodule.submoduleTitle, lang, "Lesson"),
-          description: localize(submodule.submoduleDescription, lang, ""),
-          contentBlocks: (submodule.contentBlocks || [])
-            .slice()
-            .sort((a, b) => a.order - b.order)
-            .map((block) => ({
-              blockId: block.blockId,
-              order: block.order,
-              type: block.type,
-              title: localize(block.title, lang, block.type),
-              textContent: localize(block.textContent, lang, ""),
-              videoUrl: block.videoUrl,
-              videoFileName: block.videoFileName,
-              durationMinutes: block.durationMinutes,
-              isPreview: block.isPreview,
-              quizId: block.quizId,
-              isRequiredForCompletion: block.isRequiredForCompletion,
-            })),
-        })),
-    })),
-});
+  return {
+    _id: course._id,
+    title: localize(course.title, displayLang, "Untitled course"),
+    description: localize(course.description, displayLang, ""),
+    shortDescription: localize(course.shortDescription, displayLang, ""),
+    thumbnailUrl: course.thumbnailUrl || "",
+    instructor: course.instructorId
+      ? {
+          _id: course.instructorId._id,
+          name: course.instructorId.name,
+          email: course.instructorId.email,
+        }
+      : null,
+    category: localize(course.categoryId?.name, displayLang, "General"),
+    categoryId: course.categoryId?._id || course.categoryId,
+    tags: course.tags?.[displayLang] || course.tags?.en || [],
+    difficulty: course.difficulty,
+    price: course.price,
+    currency: course.currency,
+    isPaid: course.isPaid,
+    languageAvailable: (course.languageAvailable || []).filter(
+      (l) => l === "en" || course.translationStatus?.[l] === "COMPLETED"
+    ),
+    averageRating: course.metrics?.averageRating || 0,
+    totalRatings: course.metrics?.totalRatings || 0,
+    totalEnrollments: course.metrics?.totalEnrollments || 0,
+    status: course.status,
+    enrollment: enrollment
+      ? {
+          _id: enrollment._id,
+          status: enrollment.status,
+          accessStatus: enrollment.accessStatus,
+          progressPercentage: enrollment.progressPercentage,
+          lastAccessed: enrollment.lastAccessed,
+        }
+      : null,
+  };
+};
+
+const normalizeCourseDetail = (course, lang = "en", enrollment = null) => {
+  const isLanguageAvailable =
+    lang === "en" || course.translationStatus?.[lang] === "COMPLETED";
+  const displayLang = isLanguageAvailable ? lang : "en";
+
+  return {
+    ...normalizeCourse(course, displayLang, enrollment),
+    modules: (course.modules || [])
+      .slice()
+      .sort((a, b) => a.order - b.order)
+      .map((module) => ({
+        moduleId: module.moduleId,
+        order: module.order,
+        title: localize(module.moduleTitle, displayLang, "Module"),
+        description: localize(module.moduleDescription, displayLang, ""),
+        submodules: (module.submodules || [])
+          .slice()
+          .sort((a, b) => a.order - b.order)
+          .map((submodule) => ({
+            submoduleId: submodule.submoduleId,
+            order: submodule.order,
+            title: localize(submodule.submoduleTitle, displayLang, "Lesson"),
+            description: localize(submodule.submoduleDescription, displayLang, ""),
+            contentBlocks: (submodule.contentBlocks || [])
+              .slice()
+              .sort((a, b) => a.order - b.order)
+              .map((block) => ({
+                blockId: block.blockId,
+                order: block.order,
+                type: block.type,
+                title: localize(block.title, displayLang, block.type),
+                textContent: localize(block.textContent, displayLang, ""),
+                videoUrl: block.videoUrl,
+                videoFileName: block.videoFileName,
+                durationMinutes: block.durationMinutes,
+                isPreview: block.isPreview,
+                quizId: block.quizId,
+                isRequiredForCompletion: block.isRequiredForCompletion,
+              })),
+          })),
+      })),
+  };
+};
 
 const logActivity = async (payload) =>
   UserActivity.create(payload).catch(() => null);
@@ -195,31 +209,39 @@ export const getOnboardingStatus = async (req, res) => {
   res.json({ complete: isProfileComplete(req.user.profile), profile: req.user.profile });
 };
 
-export const saveOnboardingProfile = async (req, res) => {
+export const updateStudentProfile = async (req, res) => {
   try {
-    const profile = {
-      ageGroup: req.body.ageGroup,
-      educationLevel: req.body.educationLevel,
-      preferredStreams: Array.isArray(req.body.preferredStreams)
-        ? req.body.preferredStreams
-        : [],
-      skillLevel: req.body.skillLevel,
-      careerGoal: req.body.careerGoal,
-      budgetPreference: req.body.budgetPreference,
-      preferredDifficulty: req.body.preferredDifficulty,
-      preferredLanguage: req.body.preferredLanguage,
-    };
-    if (!isProfileComplete(profile)) {
-      return res.status(400).json({ message: "All onboarding selections are required" });
-    }
+    const allowedFields = [
+      "ageGroup",
+      "educationLevel",
+      "preferredStreams",
+      "skillLevel",
+      "careerGoal",
+      "budgetPreference",
+      "preferredDifficulty",
+      "preferredLanguage",
+    ];
+    
+    const update = {};
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        update[`profile.${field}`] = req.body[field];
+      }
+    });
+
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { profile },
+      { $set: update },
       { returnDocument: "after", runValidators: true }
     );
-    res.json({ complete: true, profile: user.profile });
+    
+    res.json({ 
+      complete: isProfileComplete(user.profile), 
+      profile: user.profile,
+      user: user.toPublicJSON()
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message || "Failed to save onboarding profile" });
+    res.status(500).json({ message: error.message || "Failed to update profile" });
   }
 };
 
