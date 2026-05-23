@@ -7,8 +7,10 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
-import moduleRoutes from "./routes/moduleRoutes.js";
-import submoduleRoutes from "./routes/submoduleRoutes.js";
+import instructorRoutes from "./routes/instructorRoutes.js";
+import studentRoutes from "./routes/studentRoutes.js";
+import recommendationRoutes from "./routes/recommendationRoutes.js";
+import metadataRoutes from "./routes/metadataRoutes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,26 +27,36 @@ app.use(
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+if (process.env.NODE_ENV !== "test") {
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => console.log("MongoDB connected"))
+    .catch((err) => console.error("MongoDB connection error:", err));
+}
 
-app.get("/", (req, res) => res.json({ message: "EdTech API running" }));
-app.get("/api/health", (req, res) =>
+app.get("/", (_req, res) => res.json({ message: "EdTech API running" }));
+app.get("/api/health", (_req, res) =>
   res.json({ status: "ok", timestamp: new Date().toISOString() })
 );
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/teacher", courseRoutes);
+app.use("/api/instructor", instructorRoutes);
 app.use("/api/courses", courseRoutes);
-app.use("/api/modules", moduleRoutes);
-app.use("/api/submodules", submoduleRoutes);
+app.use("/api/student", studentRoutes);
+app.use("/api/recommendations", recommendationRoutes);
+app.use("/api/metadata", metadataRoutes);
 
-app.use((req, res) => {
+app.use((_req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT || 5001;
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Backend server is running on http://localhost:${PORT}`);
+    console.log(`API proxy should point to http://127.0.0.1:${PORT}`);
+  });
+}
+
+export default app;

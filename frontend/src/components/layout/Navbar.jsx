@@ -41,7 +41,7 @@ export default function Navbar() {
           ) : (
             <>
               <span className="hidden text-sm text-slate-500 sm:block">
-                {user?.fullName} ({user?.role})
+                {user?.name} ({user?.role})
               </span>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 Logout

@@ -45,7 +45,7 @@ export default function AdminLayout() {
                 Welcome back
               </p>
               <p className="font-semibold text-slate-900 dark:text-white">
-                {user?.fullName || "Admin"}
+                {user?.name || "Admin"}
               </p>
             </div>
           </div>
