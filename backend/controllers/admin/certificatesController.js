@@ -17,11 +17,13 @@ export const getCertificates = async (_req, res) => {
 export const uploadCertificate = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-    const isDefault = req.body.isDefault === "true" || req.body.isDefault === true;
+    
+    const isDefault = String(req.body.isDefault) === "true";
     if (isDefault) await CertificateTemplate.updateMany({}, { isDefault: false });
-    const template = await CertificateTemplate.create({
+
+    const templateData = {
       uploadedByAdminId: req.user._id,
-      templateName: req.body.templateName || req.body.name || req.file.originalname,
+      templateName: req.body.templateName || req.file.originalname.split(".")[0] || "New Template",
       templateUrl: `/uploads/certificates/${req.file.filename}`,
       templateType: req.body.templateType || templateTypeFromMime(req.file.mimetype),
       placeholders: [
@@ -33,10 +35,17 @@ export const uploadCertificate = async (req, res) => {
       ],
       isDefault,
       isActive: req.body.isActive !== "false",
-    });
+    };
+
+    const template = await CertificateTemplate.create(templateData);
     res.status(201).json({ message: "Template uploaded", template });
   } catch (error) {
-    res.status(500).json({ message: error.message || "Upload failed" });
+    console.error("CERT_UPLOAD_FAILURE:", error);
+    res.status(500).json({ 
+      message: "Certificate upload failed", 
+      error: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined 
+    });
   }
 };
 
