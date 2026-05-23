@@ -6,12 +6,17 @@ export default function RecommendationFeedbackButtons({ courseId, type = "DASHBO
   const [submitted, setSubmitted] = useState("");
 
   const send = async (feedback) => {
-    setSubmitted(feedback);
+    const nextFeedback = submitted === feedback ? "" : feedback;
+    setSubmitted(nextFeedback);
+    
+    // Only send to API if we are selecting something, or we'd need a delete API (deferred)
+    if (!nextFeedback) return;
+
     try {
       await submitRecommendationFeedback({
         courseId,
         recommendationType: type,
-        feedback,
+        feedback: nextFeedback,
       });
     } catch {
       setSubmitted("");

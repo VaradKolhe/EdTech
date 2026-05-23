@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   getStudents,
   getInstructors,
@@ -60,18 +61,26 @@ export default function ModerationSection() {
               key={c._id}
               className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900"
             >
-              <span>{c.title}</span>
-              <Button
-                size="sm"
-                variant="danger"
-                onClick={() => {
-                  if (confirm("Remove course?")) {
-                    moderateRemoveCourse(c._id).then(load);
-                  }
-                }}
-              >
-                Remove
-              </Button>
+              <span className="font-medium">{c.title?.en || "Untitled Course"}</span>
+              <div className="flex items-center gap-2">
+                <Link 
+                  to={`/student-dashboard/courses/${c._id}`}
+                  className="rounded-lg bg-slate-200 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+                >
+                  View
+                </Link>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => {
+                    if (confirm("Remove course?")) {
+                      moderateRemoveCourse(c._id).then(load);
+                    }
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
             </li>
           ))}
         </ul>

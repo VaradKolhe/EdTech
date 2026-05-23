@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { deleteCourse, getCourses } from "../../api/adminApi";
 import Button from "../../components/ui/Button";
 
@@ -80,9 +81,17 @@ export default function CoursesSection() {
                   <td className="px-4 py-3">₹{course.price}</td>
                   <td className="px-4 py-3">{course.status}</td>
                   <td className="px-4 py-3">
-                    <Button size="sm" variant="danger" onClick={() => handleDelete(course._id)}>
-                      Archive
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Link 
+                        to={`/student-dashboard/courses/${course._id}`}
+                        className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+                      >
+                        View
+                      </Link>
+                      <Button size="sm" variant="danger" onClick={() => handleDelete(course._id)}>
+                        Archive
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))
