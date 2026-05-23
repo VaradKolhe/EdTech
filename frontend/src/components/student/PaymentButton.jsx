@@ -55,10 +55,10 @@ export default function PaymentButton({ course, onEnrolled }) {
       }
 
       const checkout = new window.Razorpay({
-        key: data.keyId,
+        key: data.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: data.order.amount,
         currency: data.order.currency,
-        name: "EduLearn",
+        name: "EdTech",
         description: course.title,
         order_id: data.order.id,
         prefill: {
@@ -77,7 +77,11 @@ export default function PaymentButton({ course, onEnrolled }) {
         },
       });
       checkout.open();
-    } catch {
+    } catch (err) {
+      console.error("[DEBUG] Payment Flow Failed:", err);
+      if (err.response) {
+        console.error("[DEBUG] Server Response Error:", err.response.data);
+      }
       navigate(`/student-dashboard/payment/failure?courseId=${course._id}`);
     } finally {
       setLoading(false);

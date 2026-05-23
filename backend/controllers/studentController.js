@@ -1,5 +1,11 @@
 import crypto from "crypto";
 import mongoose from "mongoose";
+
+// Fix for local development SSL certificate issues (e.g. corporate firewalls)
+if (process.env.NODE_ENV !== "production") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
 import Course from "../models/Course.js";
 import Enrollment from "../models/Enrollment.js";
 import Payment from "../models/Payment.js";
@@ -85,6 +91,7 @@ const normalizeCourse = (course, lang = "en", enrollment = null) => {
           _id: course.instructorId._id,
           name: course.instructorId.name,
           email: course.instructorId.email,
+          isVerified: course.instructorId.instructorProfile?.verification?.status === "APPROVED",
         }
       : null,
     category: localize(course.categoryId?.name, displayLang, "General"),
@@ -140,6 +147,8 @@ const normalizeCourseDetail = (course, lang = "en", enrollment = null) => {
               .slice()
               .sort((a, b) => a.order - b.order)
               .map((block) => ({
+                moduleId: module.moduleId,
+                submoduleId: submodule.submoduleId,
                 blockId: block.blockId,
                 order: block.order,
                 type: block.type,
@@ -424,10 +433,14 @@ export const searchStudentCourses = async (req, res) => {
 export const getStudentCourseDetails = async (req, res) => {
   try {
     const lang = langFromRequest(req);
-    const course = await findPublishedCourse(req.params.courseId);
+    const filter = { _id: req.params.courseId };
+    if (req.user.role !== "admin") {
+      Object.assign(filter, publishedFilter);
+    }
+    const course = await Course.findOne(filter).populate(coursePopulate);
     if (!course) return res.status(404).json({ message: "Course not found" });
     const enrollment = await Enrollment.findOne({ userId: req.user._id, courseId: course._id });
-    const locked = course.isPaid && !enrollment;
+    const locked = course.isPaid && !enrollment && req.user.role !== "admin";
     const detail = normalizeCourseDetail(course, lang, enrollment);
     if (locked) {
       detail.modules = detail.modules.map((module) => ({
@@ -510,33 +523,49 @@ export const enrollFreeCourse = async (req, res) => {
 };
 
 export const createPaymentOrder = async (req, res) => {
+  console.log("[DEBUG] Starting createPaymentOrder for Course:", req.params.courseId);
   try {
     const course = await findPublishedCourse(req.params.courseId);
+    console.log("[DEBUG] Course Found:", course ? course.title?.en : "NULL");
+    
     if (!course) return res.status(404).json({ message: "Course not found" });
     if (!course.isPaid) return res.status(400).json({ message: "This course is free" });
+    
     const existing = await findActiveEnrollment(req.user._id, course._id);
     if (existing) return res.status(409).json({ message: "Already enrolled", enrollment: existing });
 
     const amount = Math.round(course.price * 100);
+    console.log("[DEBUG] Amount (paise):", amount);
+    console.log("[DEBUG] Keys Present:", !!process.env.RAZORPAY_KEY_ID, !!process.env.RAZORPAY_KEY_SECRET);
+
     let order = null;
     if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+      const keyId = process.env.RAZORPAY_KEY_ID.trim();
+      const keySecret = process.env.RAZORPAY_KEY_SECRET.trim();
+      
+      console.log("[DEBUG] Fetching Razorpay Order...");
       const response = await fetch("https://api.razorpay.com/v1/orders", {
         method: "POST",
         headers: {
-          Authorization: `Basic ${Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString("base64")}`,
+          Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           amount,
           currency: "INR",
-          receipt: `course_${course._id}_${Date.now()}`,
+          receipt: `c_${course._id.toString().slice(-8)}_${Date.now()}`,
         }),
       });
+      
       if (!response.ok) {
-        return res.status(502).json({ message: "Razorpay order creation failed" });
+        const errText = await response.text();
+        console.error("[DEBUG] Razorpay API Error Response:", errText);
+        return res.status(502).json({ message: "Razorpay order creation failed", details: errText });
       }
       order = await response.json();
+      console.log("[DEBUG] Razorpay Order Created:", order.id);
     } else {
+      console.warn("[DEBUG] Razorpay keys missing, falling back to DEV mode");
       order = { id: `order_dev_${Date.now()}`, amount, currency: "INR", devMode: true };
     }
 
@@ -549,9 +578,16 @@ export const createPaymentOrder = async (req, res) => {
       razorpayOrderId: order.id,
       status: "CREATED",
     });
+    
+    console.log("[DEBUG] Local Payment Record Created:", payment._id);
     res.status(201).json({ order, payment, keyId: process.env.RAZORPAY_KEY_ID || "" });
   } catch (error) {
-    res.status(500).json({ message: error.message || "Payment order failed" });
+    console.error("[DEBUG] CRITICAL ERROR in createPaymentOrder:", error);
+    res.status(500).json({ 
+      message: error.message || "Payment order failed",
+      stack: error.stack,
+      debugContext: "createPaymentOrder Catch Block"
+    });
   }
 };
 
@@ -567,9 +603,10 @@ export const verifyPayment = async (req, res) => {
     if (!payment) return res.status(404).json({ message: "Payment order not found" });
 
     const devOrder = String(razorpay_order_id || "").startsWith("order_dev_");
-    const valid = process.env.RAZORPAY_KEY_SECRET
+    const keySecret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
+    const valid = keySecret
       ? crypto
-          .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+          .createHmac("sha256", keySecret)
           .update(`${razorpay_order_id}|${razorpay_payment_id}`)
           .digest("hex") === razorpay_signature
       : devOrder;
@@ -762,8 +799,10 @@ export const submitQuiz = async (req, res) => {
 export const getQuiz = async (req, res) => {
   try {
     const { courseId, quizId } = req.params;
-    const enrollment = await findActiveEnrollment(req.user._id, courseId);
-    if (!enrollment) return res.status(403).json({ message: "Enrollment required" });
+    if (req.user.role !== "admin") {
+      const enrollment = await findActiveEnrollment(req.user._id, courseId);
+      if (!enrollment) return res.status(403).json({ message: "Enrollment required" });
+    }
 
     const quiz = await Quiz.findById(quizId).lean();
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
@@ -796,11 +835,33 @@ export const updateLastAccessed = async (req, res) => {
   try {
     const enrollment = await findActiveEnrollment(req.user._id, req.params.courseId);
     if (!enrollment) return res.status(404).json({ message: "Enrollment not found" });
+    
+    const { moduleId, submoduleId, blockId, blockType } = req.body;
+    
     enrollment.lastAccessed = {
-      moduleId: isObjectId(req.body.moduleId) ? toObjectId(req.body.moduleId) : undefined,
-      submoduleId: isObjectId(req.body.submoduleId) ? toObjectId(req.body.submoduleId) : undefined,
-      blockId: isObjectId(req.body.blockId) ? toObjectId(req.body.blockId) : undefined,
+      moduleId: isObjectId(moduleId) ? toObjectId(moduleId) : undefined,
+      submoduleId: isObjectId(submoduleId) ? toObjectId(submoduleId) : undefined,
+      blockId: isObjectId(blockId) ? toObjectId(blockId) : undefined,
     };
+    
+    // TC-20: Auto-complete non-quiz blocks on access since manual button is removed
+    if (blockId && blockType && blockType !== "QUIZ") {
+      const exists = enrollment.completedBlocks.some(
+        (item) => String(item.blockId) === String(blockId)
+      );
+      if (!exists) {
+        enrollment.completedBlocks.push({
+          moduleId: toObjectId(moduleId),
+          submoduleId: toObjectId(submoduleId),
+          blockId: toObjectId(blockId),
+          blockType,
+          completedAt: new Date(),
+        });
+        const course = await Course.findById(req.params.courseId);
+        enrollment.progressPercentage = calculateProgress(course, enrollment.completedBlocks);
+      }
+    }
+
     enrollment.totalTimeSpentMinutes += Math.ceil(Number(req.body.timeSpentSeconds || 0) / 60);
     await enrollment.save();
     res.json({ enrollment });

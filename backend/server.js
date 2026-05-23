@@ -9,7 +9,9 @@ import adminRoutes from "./routes/adminRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
 import instructorRoutes from "./routes/instructorRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
+import submoduleRoutes from "./routes/submoduleRoutes.js";
 import recommendationRoutes from "./routes/recommendationRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 import metadataRoutes from "./routes/metadataRoutes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -44,7 +46,9 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/instructor", instructorRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/student", studentRoutes);
+app.use("/api/submodules", submoduleRoutes);
 app.use("/api/recommendations", recommendationRoutes);
+app.use("/api/ai", aiRoutes);
 app.use("/api/metadata", metadataRoutes);
 
 app.use((_req, res) => {

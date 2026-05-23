@@ -79,12 +79,12 @@ export const registerInstructor = async (req, res) => {
       instructorProfile: {
         bio,
         expertise: Array.isArray(expertise) ? expertise : [expertise].filter(Boolean),
-        verification: { status: "PENDING" },
+        verification: { status: "NOT_APPLIED" },
       },
     });
 
     res.status(201).json({
-      message: "Instructor registered successfully. Awaiting admin approval.",
+      message: "Instructor registered successfully. Please complete verification onboarding.",
       user: publicUser(user),
     });
   } catch (error) {
@@ -108,14 +108,6 @@ export const login = async (req, res) => {
     }
     if (!user.isActive) {
       return res.status(403).json({ message: "Account is inactive" });
-    }
-    if (
-      user.role === "instructor" &&
-      user.instructorProfile?.verification?.status === "REJECTED"
-    ) {
-      return res.status(403).json({
-        message: "Your instructor account has been rejected. Contact support.",
-      });
     }
 
     res.json({ message: "Login successful", user: publicUser(user) });
@@ -162,6 +154,40 @@ export const updateProfile = async (req, res) => {
 
 export const getMe = async (req, res) => {
   res.json({ user: publicUser(req.user) });
+};
+
+export const submitVerification = async (req, res) => {
+  try {
+    const { workEmail, links, bio, expertise } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (user.role !== "instructor") {
+      return res.status(403).json({ message: "Only instructors can submit verification" });
+    }
+
+    const fileDocs = (req.files || []).map((file, index) => ({
+      name: `Document ${index + 1}`,
+      url: `/uploads/verification/${file.filename}`,
+      type: file.mimetype.includes("pdf") ? "CERTIFICATE" : "OTHER",
+    }));
+
+    user.instructorProfile.verification = {
+      ...user.instructorProfile.verification,
+      status: "PENDING",
+      workEmail: workEmail || user.instructorProfile.verification.workEmail,
+      links: Array.isArray(links) ? links : typeof links === "string" ? [links] : user.instructorProfile.verification.links,
+      documents: fileDocs.length > 0 ? fileDocs : user.instructorProfile.verification.documents,
+      submittedAt: new Date(),
+    };
+
+    if (bio) user.instructorProfile.bio = bio;
+    if (expertise) user.instructorProfile.expertise = expertise;
+
+    await user.save();
+    res.json({ message: "Verification submitted", user: publicUser(user) });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Submission failed" });
+  }
 };
 
 export const forgotPassword = async (req, res) => {

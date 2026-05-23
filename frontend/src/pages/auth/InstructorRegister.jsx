@@ -40,7 +40,7 @@ export default function InstructorRegister() {
         bio: { en: form.qualification },
       });
       persistAuth(data.user);
-      navigate(getRoleRedirectPath("instructor"));
+      navigate(getRoleRedirectPath(data.user));
     } catch (err) {
       setError(
         err.response?.data?.message || "Registration failed. Please try again."

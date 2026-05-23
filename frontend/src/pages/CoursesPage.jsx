@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import api from "../services/api";
 import Navbar from "../components/Navbar";
+import { useAuth } from "../context/AuthContext";
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -18,6 +19,7 @@ const currency = new Intl.NumberFormat("en-IN", {
 });
 
 export default function CoursesPage() {
+  const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [stats, setStats] = useState({ courses: 0, enrollments: 0, averageRating: "0.0" });
   const [loading, setLoading] = useState(true);
@@ -32,11 +34,15 @@ export default function CoursesPage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [sortBy, setSortBy] = useState("updatedAt");
   const navigate = useNavigate();
 
   const load = () => {
     setLoading(true);
-    Promise.all([api.get("/instructor/courses"), api.get("/instructor/stats")])
+    Promise.all([
+      api.get("/instructor/courses", { params: { sortBy } }),
+      api.get("/instructor/stats"),
+    ])
       .then(([coursesRes, statsRes]) => {
         setCourses(coursesRes.data);
         setStats(statsRes.data);
@@ -45,7 +51,7 @@ export default function CoursesPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
+  useEffect(load, [sortBy]);
 
   const handleCreate = async (event) => {
     event.preventDefault();
@@ -76,6 +82,27 @@ export default function CoursesPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0b0e14]">
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {user?.instructorProfile?.verification?.status !== "APPROVED" && (
+          <div className="mb-8 rounded-3xl bg-brand-600 p-6 text-white shadow-xl shadow-brand-600/20">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-tight">Complete your verification</h2>
+                <p className="mt-1 text-sm font-bold text-brand-100">
+                  {user?.instructorProfile?.verification?.status === "PENDING" 
+                    ? "Your application is under review. You can still update your details." 
+                    : "You haven't submitted your verification yet. Start now to unlock all features."}
+                </p>
+              </div>
+              <button 
+                onClick={() => navigate("/instructor-onboarding")}
+                className="rounded-xl bg-white px-6 py-3 text-sm font-black text-brand-600 transition-transform active:scale-95"
+              >
+                {user?.instructorProfile?.verification?.status === "NOT_APPLIED" ? "Start Verification →" : "Update Details →"}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-4xl font-black text-slate-900 dark:text-white">
@@ -83,13 +110,27 @@ export default function CoursesPage() {
             </h1>
             <p className="mt-2 text-slate-500">Manage courses, content, and learner outcomes.</p>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-black text-white"
-          >
-            <PlusIcon className="h-5 w-5" />
-            New course
-          </button>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Sort by:</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold outline-none focus:border-brand-500 dark:border-slate-800 dark:bg-[#161b22] dark:text-white"
+              >
+                <option value="updatedAt">Recently Updated</option>
+                <option value="enrollments">Most Enrolled</option>
+                <option value="rating">Highest Rated</option>
+              </select>
+            </div>
+            <button
+              onClick={() => setShowForm(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-black text-white"
+            >
+              <PlusIcon className="h-5 w-5" />
+              New course
+            </button>
+          </div>
         </div>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-3">

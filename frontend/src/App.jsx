@@ -20,7 +20,6 @@ import InstructorsSection from "./pages/admin/InstructorsSection";
 import CoursesSection from "./pages/admin/CoursesSection";
 import FeedbackSection from "./pages/admin/FeedbackSection";
 import CertificatesSection from "./pages/admin/CertificatesSection";
-import ModerationSection from "./pages/admin/ModerationSection";
 import ReportsSection from "./pages/admin/ReportsSection";
 import CoursesPage from "./pages/CoursesPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -34,6 +33,7 @@ import PaymentSuccess from "./pages/student/PaymentSuccess";
 import PaymentFailure from "./pages/student/PaymentFailure";
 import ProfilePage from "./pages/ProfilePage";
 import StudentOnboardingQuestionnaire from "./pages/student/StudentOnboardingQuestionnaire";
+import InstructorOnboarding from "./pages/instructor/InstructorOnboarding";
 
 function App() {
   return (
@@ -58,6 +58,14 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/instructor-onboarding"
+                element={
+                  <ProtectedRoute allowedRoles={["instructor"]}>
+                    <InstructorOnboarding />
+                  </ProtectedRoute>
+                }
+              />
 
               <Route
                 path="/admin-dashboard"
@@ -74,7 +82,6 @@ function App() {
                 <Route path="courses" element={<CoursesSection />} />
                 <Route path="feedback" element={<FeedbackSection />} />
                 <Route path="certificates" element={<CertificatesSection />} />
-                <Route path="moderation" element={<ModerationSection />} />
                 <Route path="reports" element={<ReportsSection />} />
               </Route>
 

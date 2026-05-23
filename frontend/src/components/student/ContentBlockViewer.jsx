@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { useParams } from "react-router-dom";
+import AIAssistPanel from "./AIAssistPanel";
 
 function VideoPlayer({ url, title }) {
   const youtubeId = url?.match(/(?:v=|youtu\.be\/)([^&\s]+)/)?.[1];
@@ -98,6 +99,19 @@ export default function ContentBlockViewer({ block, onComplete }) {
 
   if (block.type === "VIDEO") {
     return <VideoPlayer url={block.videoUrl} title={block.title} />;
+  }
+
+  if (block.type === "TEXT") {
+    return (
+      <div className="space-y-6">
+        <TextContentViewer html={block.textContent} />
+        <AIAssistPanel 
+          moduleText={block.textContent} 
+          moduleTitle={block.title} 
+          language={new URLSearchParams(window.location.search).get("language") || "en"} 
+        />
+      </div>
+    );
   }
 
   if (block.type === "QUIZ") {

@@ -13,7 +13,6 @@ export default function CoursePlayer() {
   const [enrollment, setEnrollment] = useState(null);
   const [active, setActive] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     getCoursePlayer(courseId)
@@ -39,24 +38,10 @@ export default function CoursePlayer() {
       moduleId: module.moduleId || module._id,
       submoduleId: submodule.submoduleId || submodule._id,
       blockId: block.blockId || block._id,
-    }).catch(() => null);
-  };
-
-  const markComplete = async () => {
-    if (!active) return;
-    setSaving(true);
-    try {
-      const { data } = await completeContentBlock(courseId, {
-        moduleId: active.module.moduleId || active.module._id,
-        submoduleId: active.submodule.submoduleId || active.submodule._id,
-        blockId: active.block.blockId || active.block._id,
-        blockType: active.block.type,
-        timeSpentSeconds: 60,
-      });
+      blockType: block.type,
+    }).then(({ data }) => {
       setEnrollment(data.enrollment);
-    } finally {
-      setSaving(false);
-    }
+    }).catch(() => null);
   };
 
   if (loading) {
@@ -116,17 +101,13 @@ export default function CoursePlayer() {
             </div>
           </div>
           <div className="mx-auto max-w-5xl px-5 py-8">
-            <ContentBlockViewer block={active?.block} />
-            <div className="mt-8 flex justify-end">
-              <button
-                onClick={markComplete}
-                disabled={saving || isComplete || !active}
-                className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-black text-white disabled:opacity-60"
-              >
-                <CheckCircleIcon className="h-5 w-5" />
-                {isComplete ? "Completed" : saving ? "Saving..." : "Mark complete"}
-              </button>
-            </div>
+            <ContentBlockViewer 
+              block={active?.block} 
+              onComplete={async () => {
+                const { data } = await getCoursePlayer(courseId);
+                setEnrollment(data.enrollment);
+              }} 
+            />
           </div>
         </main>
       </div>

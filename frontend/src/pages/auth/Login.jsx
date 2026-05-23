@@ -26,7 +26,7 @@ export default function Login() {
     setError("");
     try {
       const user = await login(form);
-      navigate(getRoleRedirectPath(user.role));
+      navigate(getRoleRedirectPath(user));
     } catch (err) {
       setError(
         err.response?.data?.message || "Login failed. Please check your credentials."

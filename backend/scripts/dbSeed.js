@@ -76,16 +76,16 @@ const makeFullModules = (courseTitle, quizId) => {
 };
 
 const usersData = [
-  ["Asha Admin", "admin1@edulearn.local", "admin"],
-  ["Ravi Admin", "admin2@edulearn.local", "admin"],
-  ["Isha Instructor", "instructor1@edulearn.local", "instructor"],
-  ["Kabir Instructor", "instructor2@edulearn.local", "instructor"],
-  ["Meera Instructor", "instructor3@edulearn.local", "instructor"],
-  ["Neha Student", "student1@edulearn.local", "student"],
-  ["Arjun Student", "student2@edulearn.local", "student"],
-  ["Sara Student", "student3@edulearn.local", "student"],
-  ["Dev Student", "student4@edulearn.local", "student"],
-  ["Priya Student", "student5@edulearn.local", "student"],
+  ["Asha Admin", "admin1@edtech.local", "admin"],
+  ["Ravi Admin", "admin2@edtech.local", "admin"],
+  ["Isha Instructor", "instructor1@edtech.local", "instructor"],
+  ["Kabir Instructor", "instructor2@edtech.local", "instructor"],
+  ["Meera Instructor", "instructor3@edtech.local", "instructor"],
+  ["Neha Student", "student1@edtech.local", "student"],
+  ["Arjun Student", "student2@edtech.local", "student"],
+  ["Sara Student", "student3@edtech.local", "student"],
+  ["Dev Student", "student4@edtech.local", "student"],
+  ["Priya Student", "student5@edtech.local", "student"],
 ];
 
 export const seedDatabase = async () => {
@@ -127,16 +127,15 @@ export const seedDatabase = async () => {
             }
           : {},
       instructorProfile:
-        role === "instructor"
-          ? {
-              bio: t(`${name} teaches practical technology courses.`),
-              expertise: ["Programming", "Cloud", "Data Science"],
-              verification: { status: "APPROVED" },
-              rating: 4.6,
-              totalCourses: 0,
-            }
-          : undefined,
-    }))
+      role === "instructor"
+      ? {
+      bio: t(`${name} teaches practical technology courses.`),
+      expertise: ["Programming", "Cloud", "Data Science"],
+      verification: { status: "NOT_APPLIED" },
+      rating: 4.6,
+      totalCourses: 0,
+      }
+      : undefined,    }))
   );
 
   const admins = users.filter((u) => u.role === "admin");
@@ -353,7 +352,7 @@ export const seedDatabase = async () => {
   await Notification.insertMany([
     {
       userId: students[0]._id,
-      title: t("Welcome to EduLearn"),
+      title: t("Welcome to EdTech"),
       message: t("Your seeded account is ready."),
       type: "ADMIN",
     },

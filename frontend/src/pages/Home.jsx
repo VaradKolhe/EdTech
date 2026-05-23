@@ -141,7 +141,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-12 border-t border-slate-200 dark:border-slate-800">
         <div className="mx-auto max-w-7xl px-4 text-center">
-          <p className="text-2xl font-black text-slate-900 dark:text-white mb-4">EduLearn</p>
+          <p className="text-2xl font-black text-slate-900 dark:text-white mb-4">EdTech</p>
           <p className="text-slate-500 dark:text-slate-400 text-sm mb-8 max-w-md mx-auto">
             The next generation of AI-driven, multilingual e-learning. 
             Built for a global audience with localized impact.
@@ -151,7 +151,7 @@ export default function Home() {
             <Link to="/privacy" className="text-sm font-bold text-slate-400 hover:text-slate-600">Privacy Policy</Link>
             <Link to="/terms" className="text-sm font-bold text-slate-400 hover:text-slate-600">Terms of Service</Link>
           </div>
-          <p className="text-xs text-slate-400 tracking-widest uppercase">© 2026 EduLearn AI Inc.</p>
+          <p className="text-xs text-slate-400 tracking-widest uppercase">© 2026 EdTech AI Inc.</p>
         </div>
       </footer>
     </div>

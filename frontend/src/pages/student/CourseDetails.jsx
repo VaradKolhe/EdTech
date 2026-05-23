@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   AcademicCapIcon,
+  CheckBadgeIcon,
   CheckCircleIcon,
   LanguageIcon,
   StarIcon,
@@ -87,7 +88,12 @@ export default function CourseDetails() {
                 {course.description || course.shortDescription}
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                <span>By {course.instructor?.name || "Instructor"}</span>
+                <div className="flex items-center gap-1.5">
+                  <span>By {course.instructor?.name || "Instructor"}</span>
+                  {course.instructor?.isVerified && (
+                    <CheckBadgeIcon className="h-4 w-4 text-brand-600" title="Verified Instructor" />
+                  )}
+                </div>
                 <span className="flex items-center gap-1">
                   <StarIcon className="h-5 w-5 text-amber-500" />
                   {Number(course.averageRating || 0).toFixed(1)} ({course.totalRatings || 0})
@@ -111,21 +117,7 @@ export default function CourseDetails() {
                 {(course.modules || []).map((module) => (
                   <div key={module.moduleId} className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#161b22]">
                     <h3 className="font-black text-slate-900 dark:text-white">{module.title}</h3>
-                    <div className="mt-4 space-y-3">
-                      {(module.submodules || []).map((submodule) => (
-                        <div key={submodule.submoduleId} className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
-                          <p className="font-bold text-slate-800 dark:text-slate-200">{submodule.title}</p>
-                          <div className="mt-3 grid gap-2">
-                            {(submodule.contentBlocks || []).map((block) => (
-                              <div key={block.blockId} className="flex items-center justify-between text-sm text-slate-500">
-                                <span>{block.title || block.type}</span>
-                                <span>{block.locked ? "Locked" : block.type}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="mt-2 text-sm text-slate-500">{module.description}</p>
                   </div>
                 ))}
               </div>

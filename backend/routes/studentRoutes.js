@@ -29,36 +29,36 @@ import {
 
 const router = express.Router();
 
-router.use(protect, authorizeRoles("student"));
+router.use(protect);
 
-router.get("/profile", getStudentProfile);
-router.patch("/profile", updateStudentProfile);
-router.get("/onboarding/status", getOnboardingStatus);
-router.get("/dashboard", getStudentDashboardData);
+router.get("/profile", authorizeRoles("student"), getStudentProfile);
+router.patch("/profile", authorizeRoles("student"), updateStudentProfile);
+router.get("/onboarding/status", authorizeRoles("student"), getOnboardingStatus);
+router.get("/dashboard", authorizeRoles("student"), getStudentDashboardData);
 
-router.get("/enrollments", getStudentEnrollments);
-router.get("/enrollments/:id", getStudentEnrollmentById);
+router.get("/enrollments", authorizeRoles("student"), getStudentEnrollments);
+router.get("/enrollments/:id", authorizeRoles("student"), getStudentEnrollmentById);
 
-router.get("/courses/search", searchStudentCourses);
-router.get("/courses", getStudentCourses);
-router.get("/courses/:courseId", getStudentCourseDetails);
+router.get("/courses/search", authorizeRoles("student"), searchStudentCourses);
+router.get("/courses", authorizeRoles("student"), getStudentCourses);
+router.get("/courses/:courseId", authorizeRoles("student", "admin"), getStudentCourseDetails);
 
-router.post("/courses/:courseId/enroll/free", enrollFreeCourse);
-router.post("/courses/:courseId/payment/create-order", createPaymentOrder);
-router.post("/courses/:courseId/payment/verify", verifyPayment);
+router.post("/courses/:courseId/enroll/free", authorizeRoles("student"), enrollFreeCourse);
+router.post("/courses/:courseId/payment/create-order", authorizeRoles("student"), createPaymentOrder);
+router.post("/courses/:courseId/payment/verify", authorizeRoles("student"), verifyPayment);
 
-router.get("/courses/:courseId/player", getCoursePlayer);
-router.post("/courses/:courseId/quizzes/:quizId/submit", submitQuiz);
-router.get("/courses/:courseId/quizzes/:quizId", getQuiz);
-router.post("/courses/:courseId/progress/block-complete", completeContentBlock);
-router.post("/courses/:courseId/progress/last-accessed", updateLastAccessed);
+router.get("/courses/:courseId/player", authorizeRoles("student"), getCoursePlayer);
+router.post("/courses/:courseId/quizzes/:quizId/submit", authorizeRoles("student"), submitQuiz);
+router.get("/courses/:courseId/quizzes/:quizId", authorizeRoles("student", "admin"), getQuiz);
+router.post("/courses/:courseId/progress/block-complete", authorizeRoles("student"), completeContentBlock);
+router.post("/courses/:courseId/progress/last-accessed", authorizeRoles("student"), updateLastAccessed);
 
-router.post("/courses/:courseId/rating", rateCourse);
-router.get("/courses/:courseId/ratings", getCourseRatings);
+router.post("/courses/:courseId/rating", authorizeRoles("student"), rateCourse);
+router.get("/courses/:courseId/ratings", authorizeRoles("student", "admin"), getCourseRatings);
 
-router.post("/activity", createStudentActivity);
+router.post("/activity", authorizeRoles("student"), createStudentActivity);
 
-router.get("/notifications", listNotifications);
-router.patch("/notifications/:id/read", markNotificationRead);
+router.get("/notifications", authorizeRoles("student"), listNotifications);
+router.patch("/notifications/:id/read", authorizeRoles("student"), markNotificationRead);
 
 export default router;

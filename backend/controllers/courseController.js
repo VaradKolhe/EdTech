@@ -4,6 +4,7 @@ import Category from "../models/Category.js";
 import CertificateTemplate from "../models/CertificateTemplate.js";
 import Enrollment from "../models/Enrollment.js";
 import Rating from "../models/Rating.js";
+import Quiz from "../models/Quiz.js";
 
 const localized = (value = {}) => ({
   en: String(value.en || value || ""),
@@ -140,11 +141,17 @@ export const createCourse = async (req, res) => {
 
 export const getCourses = async (req, res) => {
   try {
+    const { sortBy = "updatedAt", order = "desc" } = req.query;
     const filter = req.user.role === "instructor" ? { instructorId: req.user._id } : {};
+    
+    const sortField = sortBy === "enrollments" ? "metrics.totalEnrollments" : 
+                      sortBy === "rating" ? "metrics.averageRating" : sortBy;
+    const sortOrder = order === "asc" ? 1 : -1;
+
     const courses = await Course.find(filter)
       .populate("categoryId", "name slug")
       .populate("instructorId", "name email")
-      .sort({ updatedAt: -1 });
+      .sort({ [sortField]: sortOrder });
     res.json(courses);
   } catch (error) {
     res.status(500).json({ message: error.message || "Failed to fetch courses" });
@@ -275,5 +282,94 @@ export const saveCourseContent = async (req, res) => {
     res.json(course);
   } catch (error) {
     res.status(400).json({ message: error.message || "Failed to save content" });
+  }
+};
+
+export const updateSubmoduleBlocks = async (req, res) => {
+  try {
+    const { id: submoduleId } = req.params;
+    const { blocks } = req.body;
+
+    const course = await Course.findOne({ "modules.submodules.submoduleId": submoduleId });
+    if (!course) return res.status(404).json({ message: "Course containing submodule not found" });
+
+    if (!isOwnerOrAdmin(course, req.user)) {
+      return res.status(403).json({ message: "Not authorized to edit this course" });
+    }
+
+    let targetSubmodule = null;
+    let targetModule = null;
+    for (const mod of course.modules) {
+      const sub = mod.submodules.find((s) => String(s.submoduleId) === String(submoduleId));
+      if (sub) {
+        targetSubmodule = sub;
+        targetModule = mod;
+        break;
+      }
+    }
+
+    if (!targetSubmodule) return res.status(404).json({ message: "Submodule not found in course" });
+
+    const processedBlocks = [];
+    for (const b of blocks) {
+      const blockData = {
+        blockId: b.blockId || new mongoose.Types.ObjectId(),
+        order: b.order,
+        type: b.type,
+        title: localized(b.title || b.videoTitle || b.content),
+        textContent: localized(b.content || b.textContent),
+        videoUrl: b.videoUrl || "",
+        videoFileName: b.videoFileName || "",
+        durationMinutes: Number(b.videoDuration || b.durationMinutes || 0),
+        isPreview: Boolean(b.isPreview),
+        isRequiredForCompletion: b.isRequiredForCompletion !== false,
+      };
+
+      if (b.type === "QUIZ" && b.quizQuestions?.length) {
+        const quizPayload = {
+          courseId: course._id,
+          moduleId: targetModule.moduleId,
+          submoduleId: targetSubmodule.submoduleId,
+          title: blockData.title,
+          questions: b.quizQuestions.map((q) => {
+            const questionId = q.questionId || new mongoose.Types.ObjectId();
+            const options = q.options.map((opt) => ({
+              optionId: new mongoose.Types.ObjectId(),
+              text: localized(opt),
+            }));
+
+            const correctTextEn = q.correctAnswer;
+            const correctOpt = options.find((opt) => opt.text.en === correctTextEn) || options[0];
+
+            return {
+              questionId,
+              questionText: localized(q.question),
+              options,
+              correctOptionId: correctOpt.optionId,
+              marks: 1,
+            };
+          }),
+          totalMarks: b.quizQuestions.length,
+          passingMarks: Math.ceil(b.quizQuestions.length / 2),
+        };
+
+        let quiz;
+        if (b.quizId && mongoose.Types.ObjectId.isValid(b.quizId)) {
+          quiz = await Quiz.findByIdAndUpdate(b.quizId, quizPayload, { new: true, upsert: true });
+        } else {
+          quiz = await Quiz.create(quizPayload);
+        }
+        blockData.quizId = quiz._id;
+      }
+
+      processedBlocks.push(blockData);
+    }
+
+    targetSubmodule.contentBlocks = processedBlocks;
+    await course.save();
+
+    res.json({ _id: submoduleId, blocks: processedBlocks });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Failed to update blocks" });
   }
 };

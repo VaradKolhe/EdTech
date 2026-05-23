@@ -1,4 +1,4 @@
-# EduLearn — Login Branch
+# EdTech — Login Branch
 
 Auth-only: register, login, JWT, admin seed. No dashboard UI.
 

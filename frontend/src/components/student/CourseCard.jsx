@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import {
   AcademicCapIcon,
+  CheckBadgeIcon,
   LanguageIcon,
   StarIcon,
   UserGroupIcon,
@@ -39,9 +40,12 @@ export default function CourseCard({ course }) {
         <p className="mt-2 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
           {course.shortDescription || course.description || "No description available."}
         </p>
-        <p className="mt-4 text-sm font-semibold text-slate-600 dark:text-slate-300">
-          {course.instructor?.name || "Instructor"}
-        </p>
+        <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300">
+          <span>{course.instructor?.name || "Instructor"}</span>
+          {course.instructor?.isVerified && (
+            <CheckBadgeIcon className="h-4 w-4 text-brand-600" title="Verified Instructor" />
+          )}
+        </div>
         <div className="mt-4 grid grid-cols-2 gap-3 text-xs font-semibold text-slate-500">
           <span className="flex items-center gap-1">
             <StarIcon className="h-4 w-4 text-amber-500" />

@@ -66,7 +66,7 @@ export default function Navbar() {
           <div className="rounded-lg bg-brand-600 p-1 text-white shadow-lg shadow-brand-600/20">
             <AcademicCapIcon className="h-6 w-6" />
           </div>
-          <span>EduLearn</span>
+          <span>EdTech</span>
         </Link>
 
         {(isStudent || isInstructor) && (

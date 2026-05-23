@@ -1,6 +1,6 @@
-# EduLearn: AI-Powered Multilingual E-Learning Platform
+# EdTech: AI-Powered Multilingual E-Learning Platform
 
-EduLearn is a cloud-deployed EdTech platform that combines full-stack web development with machine learning recommendations and AI-driven content generation.
+EdTech is a cloud-deployed EdTech platform that combines full-stack web development with machine learning recommendations and AI-driven content generation.
 
 ## Project Structure
 
