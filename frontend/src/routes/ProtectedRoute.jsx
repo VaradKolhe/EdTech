@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { isStudentProfileComplete } from "../config/roleRedirects";
 
 /**
  * Use when wiring dashboard routes from other branches.
@@ -23,6 +24,14 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to={getRoleRedirectPath(user.role)} replace />;
+  }
+
+  if (
+    user.role === "student" &&
+    location.pathname !== "/student-onboarding" &&
+    !isStudentProfileComplete(user.profile)
+  ) {
+    return <Navigate to="/student-onboarding" replace />;
   }
 
   return children;
