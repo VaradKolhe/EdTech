@@ -50,7 +50,7 @@ describe("AI Module Assistant API", () => {
       });
 
     expect(res.status).toBe(200);
-    expect(res.body.result).toBe("This is a summary.");
+    expect(res.body.result).toBe("<p>This is a summary.</p>\n");
   });
 
   test("POST /api/ai/module-assist - Elaborate should work", async () => {
@@ -65,10 +65,10 @@ describe("AI Module Assistant API", () => {
       });
 
     expect(res.status).toBe(200);
-    expect(res.body.result).toBe("This is an elaboration.");
-  });
+    expect(res.body.result).toBe("<p>This is an elaboration.</p>\n");
+    });
 
-  test("POST /api/ai/module-assist - Invalid operation should be rejected", async () => {
+    test("POST /api/ai/module-assist - Invalid operation should be rejected", async () => {
     const res = await request(app)
       .post("/api/ai/module-assist")
       .set("Authorization", `Bearer ${studentToken}`)
@@ -91,7 +91,7 @@ describe("AI Module Assistant API", () => {
       });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toMatch(/too short/);
+    expect(res.body.message).toMatch(/have enough text/i);
   });
 
   test("POST /api/ai/module-assist - Prompt injection / Quiz answers should be refused by controller", async () => {
@@ -131,3 +131,4 @@ describe("AI Module Assistant API", () => {
     expect(res.status).toBe(401);
   });
 });
+;

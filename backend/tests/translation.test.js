@@ -1,10 +1,14 @@
-import { translateCourseContent } from "../services/courseTranslation.service.js";
+import { jest } from "@jest/globals";
 import { connect, close, clear } from "./setup.js";
 import mongoose from "mongoose";
 
 // Mocking AWS Translate to avoid real API calls/costs during testing
-import * as awsService from "../services/awsTranslate.service.js";
-jest.mock("../services/awsTranslate.service.js");
+jest.unstable_mockModule("../services/awsTranslate.service.js", () => ({
+  translateText: jest.fn(),
+}));
+
+const awsService = await import("../services/awsTranslate.service.js");
+const { translateCourseContent } = await import("../services/courseTranslation.service.js");
 
 beforeAll(async () => await connect());
 afterEach(async () => await clear());

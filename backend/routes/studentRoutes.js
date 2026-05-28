@@ -41,20 +41,20 @@ router.get("/enrollments/:id", authorizeRoles("student"), getStudentEnrollmentBy
 
 router.get("/courses/search", authorizeRoles("student"), searchStudentCourses);
 router.get("/courses", authorizeRoles("student"), getStudentCourses);
-router.get("/courses/:courseId", authorizeRoles("student", "admin"), getStudentCourseDetails);
+router.get("/courses/:courseId", authorizeRoles("student", "admin", "instructor"), getStudentCourseDetails);
 
 router.post("/courses/:courseId/enroll/free", authorizeRoles("student"), enrollFreeCourse);
 router.post("/courses/:courseId/payment/create-order", authorizeRoles("student"), createPaymentOrder);
 router.post("/courses/:courseId/payment/verify", authorizeRoles("student"), verifyPayment);
 
-router.get("/courses/:courseId/player", authorizeRoles("student"), getCoursePlayer);
-router.post("/courses/:courseId/quizzes/:quizId/submit", authorizeRoles("student"), submitQuiz);
-router.get("/courses/:courseId/quizzes/:quizId", authorizeRoles("student", "admin"), getQuiz);
-router.post("/courses/:courseId/progress/block-complete", authorizeRoles("student"), completeContentBlock);
-router.post("/courses/:courseId/progress/last-accessed", authorizeRoles("student"), updateLastAccessed);
+router.get("/courses/:courseId/player", authorizeRoles("student", "admin", "instructor"), getCoursePlayer);
+router.post("/courses/:courseId/quizzes/:quizId/submit", authorizeRoles("student", "admin", "instructor"), submitQuiz);
+router.get("/courses/:courseId/quizzes/:quizId", authorizeRoles("student", "admin", "instructor"), getQuiz);
+router.post("/courses/:courseId/progress/block-complete", authorizeRoles("student", "admin", "instructor"), completeContentBlock);
+router.post("/courses/:courseId/progress/last-accessed", authorizeRoles("student", "admin", "instructor"), updateLastAccessed);
 
 router.post("/courses/:courseId/rating", authorizeRoles("student"), rateCourse);
-router.get("/courses/:courseId/ratings", authorizeRoles("student", "admin"), getCourseRatings);
+router.get("/courses/:courseId/ratings", authorizeRoles("student", "admin", "instructor"), getCourseRatings);
 
 router.post("/activity", authorizeRoles("student"), createStudentActivity);
 

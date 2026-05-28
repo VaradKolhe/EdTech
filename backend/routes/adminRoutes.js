@@ -8,7 +8,14 @@ import {
   deleteInstructor,
 } from "../controllers/admin/instructorsController.js";
 import { getStudents, deleteStudent } from "../controllers/admin/studentsController.js";
-import { getCourses, deleteCourse } from "../controllers/admin/coursesController.js";
+import {
+  getCourses as getAdminCourses,
+  getPendingReviewCourses,
+  approveCourse,
+  rejectCourse,
+  archiveCourse,
+  deleteCourse,
+} from "../controllers/admin/coursesController.js";
 import { getFeedbackAnalytics } from "../controllers/admin/feedbackController.js";
 import {
   getCertificates,
@@ -33,7 +40,11 @@ router.delete("/instructors/:id", deleteInstructor);
 router.get("/students", getStudents);
 router.delete("/students/:id", deleteStudent);
 
-router.get("/courses", getCourses);
+router.get("/courses", getAdminCourses);
+router.get("/courses/pending-review", getPendingReviewCourses);
+router.patch("/courses/:id/approve", approveCourse);
+router.patch("/courses/:id/reject", rejectCourse);
+router.patch("/courses/:id/archive", archiveCourse);
 router.delete("/courses/:id", deleteCourse);
 
 router.get("/feedback/analytics", getFeedbackAnalytics);

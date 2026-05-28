@@ -44,6 +44,78 @@ describe("Module 2: Course Management", () => {
     expect(res.body.title.en).toBe("Test Course");
   });
 
+  test("Instructor creates a submodule through the nested course module route", async () => {
+    const { instructor } = await getTokens();
+    const cat = await Category.create({ name: { en: "Submodule Cat" }, slug: "submodule-cat" });
+    const course = await Course.create({
+      title: { en: "Course With Module" },
+      instructorId: instructor.id,
+      categoryId: cat._id,
+      difficulty: "Beginner",
+      modules: [
+        {
+          order: 0,
+          moduleTitle: { en: "Module 1" },
+          submodules: [],
+        },
+      ],
+    });
+
+    const moduleId = course.modules[0]._id;
+    const res = await request(app)
+      .post(`/api/instructor/courses/${course._id}/modules/${moduleId}/submodules`)
+      .set("Authorization", `Bearer ${instructor.token}`)
+      .send({ title: { en: "Lesson 1", hi: "", mr: "" } });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.submodule.submoduleTitle.en).toBe("Lesson 1");
+
+    const updated = await Course.findById(course._id);
+    expect(updated.modules[0].submodules).toHaveLength(1);
+  });
+
+  test("Nested submodule create falls back to the owned course containing the module", async () => {
+    const { instructor } = await getTokens();
+    const cat = await Category.create({ name: { en: "Fallback Cat" }, slug: "fallback-cat" });
+    const [staleCourse, targetCourse] = await Course.create([
+      {
+        title: { en: "Stale Course" },
+        instructorId: instructor.id,
+        categoryId: cat._id,
+        difficulty: "Beginner",
+      },
+      {
+        title: { en: "Target Course" },
+        instructorId: instructor.id,
+        categoryId: cat._id,
+        difficulty: "Beginner",
+        modules: [
+          {
+            order: 0,
+            moduleTitle: { en: "Target Module" },
+            submodules: [],
+          },
+        ],
+      },
+    ]);
+
+    const moduleId = targetCourse.modules[0]._id;
+    const res = await request(app)
+      .post(`/api/instructor/courses/${staleCourse._id}/modules/${moduleId}/submodules`)
+      .set("Authorization", `Bearer ${instructor.token}`)
+      .send({ title: { en: "Fallback Lesson", hi: "", mr: "" } });
+
+    expect(res.status).toBe(201);
+    expect(String(res.body.courseId)).toBe(String(targetCourse._id));
+    expect(res.body.submodule.submoduleTitle.en).toBe("Fallback Lesson");
+
+    const updatedTarget = await Course.findById(targetCourse._id);
+    const updatedStale = await Course.findById(staleCourse._id);
+    expect(updatedTarget.modules[0].submodules).toHaveLength(1);
+    expect(updatedStale.modules).toHaveLength(0);
+  });
+
   test("TC-09: Course upload with unsupported file type", async () => {
     // This TC refers to file type validation, typically handled in multer or controller.
     // Mark as partially implemented if no specific check exists, but we'll try to trigger it.

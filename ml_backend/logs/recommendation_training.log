@@ -1,0 +1,120 @@
+2026-05-27 10:37:50,146 [WARNING] NLTK stopwords not found. Downloading stopwords...
+2026-05-27 10:37:50,456 [INFO] ======================================================================
+2026-05-27 10:37:50,457 [INFO] Starting recommendation model training pipeline
+2026-05-27 10:37:50,458 [INFO] ======================================================================
+2026-05-27 10:37:50,458 [INFO] Environment loaded successfully.
+2026-05-27 10:37:50,458 [INFO] Database name: edtech
+2026-05-27 10:37:50,459 [INFO] Mongo URI: mongodb+srv://****:****@cluster0.2ucrhih.mongodb.net/?appName=Cluster0
+2026-05-27 10:37:50,459 [INFO] Model directory: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\models
+2026-05-27 10:37:50,460 [INFO] Log file: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\logs\recommendation_training.log
+2026-05-27 10:37:50,460 [INFO] Connecting to MongoDB...
+2026-05-27 10:37:50,908 [INFO] MongoDB connected successfully.
+2026-05-27 10:37:50,909 [INFO] Fetching published courses...
+2026-05-27 10:37:50,918 [WARNING] No published courses found. Training aborted. Existing models are preserved.
+2026-05-27 10:37:50,937 [INFO] MongoDB connection closed.
+2026-05-27 10:37:50,938 [ERROR] SYSTEM EXECUTION FAILED OR ABORTED SAFELY
+2026-05-27 10:38:24,803 [INFO] ======================================================================
+2026-05-27 10:38:24,803 [INFO] Starting recommendation model training pipeline
+2026-05-27 10:38:24,804 [INFO] ======================================================================
+2026-05-27 10:38:24,804 [INFO] Environment loaded successfully.
+2026-05-27 10:38:24,805 [INFO] Database name: edtech
+2026-05-27 10:38:24,805 [INFO] Mongo URI: mongodb+srv://****:****@cluster0.2ucrhih.mongodb.net/?appName=Cluster0
+2026-05-27 10:38:24,806 [INFO] Model directory: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\models
+2026-05-27 10:38:24,806 [INFO] Log file: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\logs\recommendation_training.log
+2026-05-27 10:38:24,806 [INFO] Connecting to MongoDB...
+2026-05-27 10:38:27,354 [INFO] MongoDB connected successfully.
+2026-05-27 10:38:27,355 [INFO] Fetching published courses...
+2026-05-27 10:38:27,385 [WARNING] No published courses found. Training aborted. Existing models are preserved.
+2026-05-27 10:38:27,406 [INFO] MongoDB connection closed.
+2026-05-27 10:38:27,407 [ERROR] SYSTEM EXECUTION FAILED OR ABORTED SAFELY
+2026-05-27 10:40:05,917 [INFO] ======================================================================
+2026-05-27 10:40:05,917 [INFO] Starting recommendation model training pipeline
+2026-05-27 10:40:05,917 [INFO] ======================================================================
+2026-05-27 10:40:05,917 [INFO] Environment loaded successfully.
+2026-05-27 10:40:05,917 [INFO] Database name: edtech
+2026-05-27 10:40:05,918 [INFO] Mongo URI: mongodb://127.0.0.1:27017/edtech
+2026-05-27 10:40:05,918 [INFO] Model directory: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\models
+2026-05-27 10:40:05,918 [INFO] Log file: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\logs\recommendation_training.log
+2026-05-27 10:40:05,918 [INFO] Connecting to MongoDB...
+2026-05-27 10:40:05,973 [INFO] MongoDB connected successfully.
+2026-05-27 10:40:05,973 [INFO] Fetching published courses...
+2026-05-27 10:40:05,986 [WARNING] No published courses found. Training aborted. Existing models are preserved.
+2026-05-27 10:40:05,988 [INFO] MongoDB connection closed.
+2026-05-27 10:40:05,989 [ERROR] SYSTEM EXECUTION FAILED OR ABORTED SAFELY
+2026-05-27 10:40:31,985 [INFO] ======================================================================
+2026-05-27 10:40:31,986 [INFO] Starting recommendation model training pipeline
+2026-05-27 10:40:31,986 [INFO] ======================================================================
+2026-05-27 10:40:31,986 [INFO] Environment loaded successfully.
+2026-05-27 10:40:31,986 [INFO] Database name: edtech
+2026-05-27 10:40:31,987 [INFO] Mongo URI: mongodb://127.0.0.1:27017/edtech
+2026-05-27 10:40:31,987 [INFO] Model directory: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\models
+2026-05-27 10:40:31,987 [INFO] Log file: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\logs\recommendation_training.log
+2026-05-27 10:40:31,987 [INFO] Connecting to MongoDB...
+2026-05-27 10:40:32,016 [INFO] MongoDB connected successfully.
+2026-05-27 10:40:32,016 [INFO] Fetching published courses...
+2026-05-27 10:40:32,018 [WARNING] No published courses found. Training aborted. Existing models are preserved.
+2026-05-27 10:40:32,018 [INFO] MongoDB connection closed.
+2026-05-27 10:40:32,019 [ERROR] SYSTEM EXECUTION FAILED OR ABORTED SAFELY
+2026-05-27 10:41:45,543 [INFO] ======================================================================
+2026-05-27 10:41:45,543 [INFO] Starting recommendation model training pipeline
+2026-05-27 10:41:45,544 [INFO] ======================================================================
+2026-05-27 10:41:45,544 [INFO] Environment loaded successfully.
+2026-05-27 10:41:45,544 [INFO] Database name: temp
+2026-05-27 10:41:45,544 [INFO] Mongo URI: mongodb+srv://****:****@cluster0.2ucrhih.mongodb.net/?appName=Cluster0
+2026-05-27 10:41:45,544 [INFO] Model directory: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\models
+2026-05-27 10:41:45,545 [INFO] Log file: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\logs\recommendation_training.log
+2026-05-27 10:41:45,545 [INFO] Connecting to MongoDB...
+2026-05-27 10:41:45,909 [INFO] MongoDB connected successfully.
+2026-05-27 10:41:45,910 [INFO] Fetching published courses...
+2026-05-27 10:41:45,919 [WARNING] No published courses found. Training aborted. Existing models are preserved.
+2026-05-27 10:41:45,941 [INFO] MongoDB connection closed.
+2026-05-27 10:41:45,942 [ERROR] SYSTEM EXECUTION FAILED OR ABORTED SAFELY
+2026-05-27 10:50:08,184 [INFO] ======================================================================
+2026-05-27 10:50:08,185 [INFO] Starting recommendation model training pipeline
+2026-05-27 10:50:08,185 [INFO] ======================================================================
+2026-05-27 10:50:08,185 [INFO] Environment loaded successfully.
+2026-05-27 10:50:08,186 [INFO] Database name: edtech
+2026-05-27 10:50:08,186 [INFO] Mongo URI: mongodb+srv://****:****@cluster0.2ucrhih.mongodb.net/?appName=Cluster0
+2026-05-27 10:50:08,186 [INFO] Model directory: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\models
+2026-05-27 10:50:08,187 [INFO] Log file: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\logs\recommendation_training.log
+2026-05-27 10:50:08,187 [INFO] Connecting to MongoDB...
+2026-05-27 10:50:08,678 [INFO] MongoDB connected successfully.
+2026-05-27 10:50:08,678 [INFO] Fetching published courses...
+2026-05-27 10:50:08,691 [WARNING] No published courses found. Training aborted. Existing models are preserved.
+2026-05-27 10:50:08,701 [INFO] MongoDB connection closed.
+2026-05-27 10:50:08,702 [ERROR] SYSTEM EXECUTION FAILED OR ABORTED SAFELY
+2026-05-27 10:51:36,102 [INFO] ======================================================================
+2026-05-27 10:51:36,102 [INFO] Starting recommendation model training pipeline
+2026-05-27 10:51:36,103 [INFO] ======================================================================
+2026-05-27 10:51:36,103 [INFO] Environment loaded successfully.
+2026-05-27 10:51:36,104 [INFO] Database name: edtech
+2026-05-27 10:51:36,104 [INFO] Mongo URI: mongodb+srv://****:****@cluster0.2ucrhih.mongodb.net/?appName=Cluster0
+2026-05-27 10:51:36,104 [INFO] Model directory: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\models
+2026-05-27 10:51:36,105 [INFO] Log file: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\logs\recommendation_training.log
+2026-05-27 10:51:36,105 [INFO] Connecting to MongoDB...
+2026-05-27 10:51:36,457 [INFO] MongoDB connected successfully.
+2026-05-27 10:51:36,457 [INFO] Fetching published courses...
+2026-05-27 10:51:36,474 [INFO] Published courses fetched: 6
+2026-05-27 10:51:36,474 [INFO] Flattening and cleaning course data...
+2026-05-27 10:51:36,487 [INFO] DataFrame shape: (6, 13)
+2026-05-27 10:51:36,494 [INFO] Usable courses for training: 6
+2026-05-27 10:51:36,496 [INFO] Training multilingual TF-IDF models...
+2026-05-27 10:51:36,496 [INFO] Fitting TF-IDF vectorizer for language: en
+2026-05-27 10:51:36,503 [INFO] Creating cosine similarity matrix for language: en
+2026-05-27 10:51:36,508 [INFO] Saved language model files for 'en': tfidf_vectorizer_en.pkl, similarity_matrix_en.pkl
+2026-05-27 10:51:36,509 [INFO] Fitting TF-IDF vectorizer for language: hi
+2026-05-27 10:51:36,511 [INFO] Creating cosine similarity matrix for language: hi
+2026-05-27 10:51:36,517 [INFO] Saved language model files for 'hi': tfidf_vectorizer_hi.pkl, similarity_matrix_hi.pkl
+2026-05-27 10:51:36,518 [INFO] Fitting TF-IDF vectorizer for language: mr
+2026-05-27 10:51:36,520 [INFO] Creating cosine similarity matrix for language: mr
+2026-05-27 10:51:36,526 [INFO] Saved language model files for 'mr': tfidf_vectorizer_mr.pkl, similarity_matrix_mr.pkl
+2026-05-27 10:51:36,527 [INFO] Saving shared model files...
+2026-05-27 10:51:36,530 [INFO] All model files generated in temporary directory.
+2026-05-27 10:51:36,531 [INFO] Replacing final model files safely...
+2026-05-27 10:51:36,532 [INFO] No existing model files found. Backup skipped.
+2026-05-27 10:51:36,537 [INFO] Model files replaced successfully.
+2026-05-27 10:51:36,537 [INFO] Training completed successfully.
+2026-05-27 10:51:36,538 [INFO] Models updated at: C:\Users\lenovo\OneDrive\Desktop\Projects\EdTech\ml_backend\models
+2026-05-27 10:51:36,538 [INFO] ======================================================================
+2026-05-27 10:51:36,547 [INFO] MongoDB connection closed.
+2026-05-27 10:51:36,548 [INFO] SYSTEM EXECUTED SUCCESSFULLY

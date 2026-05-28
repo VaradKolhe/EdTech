@@ -2,10 +2,11 @@ import { Link } from "react-router-dom";
 import { AcademicCapIcon, LanguageIcon } from "@heroicons/react/24/outline";
 import ProgressBar from "./ProgressBar";
 import { useTheme } from "../../context/ThemeContext";
+import { getLocalizedValue } from "../../utils/localize";
 
 export default function EnrolledCourseCard({ course }) {
-  const { language } = useTheme();
-  const title = course.title?.[language] || course.title?.en || course.title;
+  const { effectiveCourseContentLanguage } = useTheme();
+  const title = getLocalizedValue(course.title, effectiveCourseContentLanguage, "Course");
 
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#161b22]">

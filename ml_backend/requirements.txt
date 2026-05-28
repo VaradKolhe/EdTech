@@ -1,0 +1,11 @@
+pymongo
+dnspython
+pandas
+numpy
+scikit-learn
+nltk
+joblib
+python-dotenv
+fastapi
+uvicorn
+apscheduler

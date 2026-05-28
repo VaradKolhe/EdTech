@@ -1,0 +1,83 @@
+2026-05-27 10:36:24,225 [INFO] Loading recommendation models...
+2026-05-27 10:36:24,225 [INFO] Recommendation service models ready
+2026-05-27 10:36:24,251 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-27 10:36:24,252 [INFO] Added job "reload_if_needed" to job store "default"
+2026-05-27 10:36:24,253 [INFO] Scheduler started
+2026-05-27 10:36:26,078 [INFO] Loading recommendation models...
+2026-05-27 10:36:26,078 [INFO] Recommendation service models ready
+2026-05-27 10:36:26,087 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-27 10:36:26,089 [INFO] Added job "reload_if_needed" to job store "default"
+2026-05-27 10:36:26,089 [INFO] Scheduler started
+2026-05-27 10:36:50,518 [INFO] Loading recommendation models...
+2026-05-27 10:36:50,519 [INFO] Recommendation service models ready
+2026-05-27 10:36:50,526 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-27 10:36:50,527 [INFO] Added job "reload_if_needed" to job store "default"
+2026-05-27 10:36:50,527 [INFO] Scheduler started
+2026-05-27 10:41:50,528 [INFO] Running job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 10:41:50 IST)" (scheduled at 2026-05-27 10:41:50.526215+05:30)
+2026-05-27 10:41:50,529 [INFO] Job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 10:46:50 IST)" executed successfully
+2026-05-27 10:46:50,528 [INFO] Running job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 10:51:50 IST)" (scheduled at 2026-05-27 10:46:50.526215+05:30)
+2026-05-27 10:46:50,529 [INFO] Job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 10:51:50 IST)" executed successfully
+2026-05-27 10:51:50,532 [INFO] Running job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 10:56:50 IST)" (scheduled at 2026-05-27 10:51:50.526215+05:30)
+2026-05-27 10:51:50,558 [INFO] New models detected, reloading...
+2026-05-27 10:51:50,559 [INFO] Loading recommendation models...
+2026-05-27 10:51:50,739 [INFO] Loaded en vectorizer
+2026-05-27 10:51:50,752 [INFO] Loaded en similarity matrix
+2026-05-27 10:51:50,767 [INFO] Loaded hi vectorizer
+2026-05-27 10:51:50,784 [INFO] Loaded hi similarity matrix
+2026-05-27 10:51:50,800 [INFO] Loaded mr vectorizer
+2026-05-27 10:51:50,813 [INFO] Loaded mr similarity matrix
+2026-05-27 10:51:50,851 [INFO] Loaded course dataframe
+2026-05-27 10:51:50,868 [INFO] Loaded course mapping
+2026-05-27 10:51:50,869 [INFO] Loaded model metadata
+2026-05-27 10:51:50,870 [INFO] Recommendation service models ready
+2026-05-27 10:51:50,870 [INFO] Job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 10:56:50 IST)" executed successfully
+2026-05-27 10:51:50,970 [INFO] Loading recommendation models...
+2026-05-27 10:51:50,980 [INFO] Loaded en vectorizer
+2026-05-27 10:51:50,981 [INFO] Loaded en similarity matrix
+2026-05-27 10:51:50,984 [INFO] Loaded hi vectorizer
+2026-05-27 10:51:50,985 [INFO] Loaded hi similarity matrix
+2026-05-27 10:51:50,987 [INFO] Loaded mr vectorizer
+2026-05-27 10:51:50,988 [INFO] Loaded mr similarity matrix
+2026-05-27 10:51:50,989 [INFO] Loaded course dataframe
+2026-05-27 10:51:50,990 [INFO] Loaded course mapping
+2026-05-27 10:51:50,990 [INFO] Loaded model metadata
+2026-05-27 10:51:50,990 [INFO] Recommendation service models ready
+2026-05-27 10:51:51,006 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-27 10:51:51,008 [INFO] Added job "reload_if_needed" to job store "default"
+2026-05-27 10:51:51,008 [INFO] Scheduler started
+2026-05-27 10:52:26,661 [INFO] Loading recommendation models...
+2026-05-27 10:52:26,671 [INFO] Loaded en vectorizer
+2026-05-27 10:52:26,672 [INFO] Loaded en similarity matrix
+2026-05-27 10:52:26,674 [INFO] Loaded hi vectorizer
+2026-05-27 10:52:26,674 [INFO] Loaded hi similarity matrix
+2026-05-27 10:52:26,677 [INFO] Loaded mr vectorizer
+2026-05-27 10:52:26,677 [INFO] Loaded mr similarity matrix
+2026-05-27 10:52:26,679 [INFO] Loaded course dataframe
+2026-05-27 10:52:26,679 [INFO] Loaded course mapping
+2026-05-27 10:52:26,679 [INFO] Loaded model metadata
+2026-05-27 10:52:26,680 [INFO] Recommendation service models ready
+2026-05-27 10:52:26,690 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-27 10:52:26,692 [INFO] Added job "reload_if_needed" to job store "default"
+2026-05-27 10:52:26,692 [INFO] Scheduler started
+2026-05-27 10:52:42,398 [INFO] Loading recommendation models...
+2026-05-27 10:52:42,409 [INFO] Loaded en vectorizer
+2026-05-27 10:52:42,410 [INFO] Loaded en similarity matrix
+2026-05-27 10:52:42,412 [INFO] Loaded hi vectorizer
+2026-05-27 10:52:42,413 [INFO] Loaded hi similarity matrix
+2026-05-27 10:52:42,415 [INFO] Loaded mr vectorizer
+2026-05-27 10:52:42,416 [INFO] Loaded mr similarity matrix
+2026-05-27 10:52:42,418 [INFO] Loaded course dataframe
+2026-05-27 10:52:42,418 [INFO] Loaded course mapping
+2026-05-27 10:52:42,419 [INFO] Loaded model metadata
+2026-05-27 10:52:42,419 [INFO] Recommendation service models ready
+2026-05-27 10:52:42,426 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-27 10:52:42,428 [INFO] Added job "reload_if_needed" to job store "default"
+2026-05-27 10:52:42,428 [INFO] Scheduler started
+2026-05-27 10:57:26,705 [INFO] Running job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 10:57:26 IST)" (scheduled at 2026-05-27 10:57:26.690096+05:30)
+2026-05-27 10:57:26,707 [INFO] Job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 11:02:26 IST)" executed successfully
+2026-05-27 11:02:26,693 [INFO] Running job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 11:07:26 IST)" (scheduled at 2026-05-27 11:02:26.690096+05:30)
+2026-05-27 11:02:26,694 [INFO] Job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 11:07:26 IST)" executed successfully
+2026-05-27 11:07:26,700 [INFO] Running job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 11:12:26 IST)" (scheduled at 2026-05-27 11:07:26.690096+05:30)
+2026-05-27 11:07:26,701 [INFO] Job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 11:12:26 IST)" executed successfully
+2026-05-27 11:12:26,702 [INFO] Running job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 11:17:26 IST)" (scheduled at 2026-05-27 11:12:26.690096+05:30)
+2026-05-27 11:12:26,706 [INFO] Job "reload_if_needed (trigger: interval[0:05:00], next run at: 2026-05-27 11:17:26 IST)" executed successfully
