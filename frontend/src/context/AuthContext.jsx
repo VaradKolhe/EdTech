@@ -55,11 +55,22 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const { data } = await getMe();
-      const merged = { ...JSON.parse(stored || "{}"), ...data.user };
+      const refreshedUser = data.user;
+      const merged = { ...JSON.parse(stored || "{}"), ...refreshedUser };
+      
+      // Crucial: Update BOTH the user object and the standalone token key
       localStorage.setItem("user", JSON.stringify(merged));
+      if (refreshedUser.token) {
+        localStorage.setItem("token", refreshedUser.token);
+      }
+      
       setUser(merged);
-    } catch {
-      logout();
+    } catch (err) {
+      // Only logout on 401/403 or specific auth errors
+      // Prevent logging out on transient network errors
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        logout();
+      }
     } finally {
       setLoading(false);
     }

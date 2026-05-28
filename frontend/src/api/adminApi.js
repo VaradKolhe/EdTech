@@ -12,6 +12,10 @@ export const getStudents = (params) => api.get("/admin/students", { params });
 export const deleteStudent = (id) => api.delete(`/admin/students/${id}`);
 
 export const getCourses = (params) => api.get("/admin/courses", { params });
+export const getPendingCourses = () => api.get("/admin/courses/pending-review");
+export const approveCourse = (id) => api.patch(`/admin/courses/${id}/approve`);
+export const rejectCourse = (id, reason) => api.patch(`/admin/courses/${id}/reject`, { reason });
+export const archiveCourse = (id, reason) => api.patch(`/admin/courses/${id}/archive`, { reason });
 export const deleteCourse = (id) => api.delete(`/admin/courses/${id}`);
 
 export const getFeedbackAnalytics = () => api.get("/admin/feedback/analytics");

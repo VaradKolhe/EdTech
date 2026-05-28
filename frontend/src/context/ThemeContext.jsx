@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import i18n from "../i18n";
 
 const ThemeContext = createContext();
 
@@ -8,8 +9,12 @@ export function ThemeProvider({ children }) {
     return stored ? stored === "dark" : true;
   });
 
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem("language") || "en";
+  const [appLanguage, setAppLanguage] = useState(() => {
+    return localStorage.getItem("appLanguage") || localStorage.getItem("language") || i18n.language || "en";
+  });
+
+  const [courseContentLanguage, setCourseContentLanguage] = useState(() => {
+    return localStorage.getItem("courseContentLanguage") || "same";
   });
 
   useEffect(() => {
@@ -18,15 +23,31 @@ export function ThemeProvider({ children }) {
   }, [dark]);
 
   useEffect(() => {
-    localStorage.setItem("language", language);
-  }, [language]);
+    localStorage.setItem("appLanguage", appLanguage);
+    localStorage.setItem("language", appLanguage);
+    i18n.changeLanguage(appLanguage);
+  }, [appLanguage]);
+
+  useEffect(() => {
+    localStorage.setItem("courseContentLanguage", courseContentLanguage);
+  }, [courseContentLanguage]);
+
+  const effectiveCourseContentLanguage =
+    courseContentLanguage === "same" ? appLanguage : courseContentLanguage;
 
   return (
     <ThemeContext.Provider value={{ 
       dark, 
       toggle: () => setDark((d) => !d),
-      language,
-      setLanguage
+      appLanguage,
+      setAppLanguage,
+      globalLanguage: appLanguage,
+      setGlobalLanguage: setAppLanguage,
+      language: appLanguage,
+      setLanguage: setAppLanguage,
+      courseContentLanguage,
+      setCourseContentLanguage,
+      effectiveCourseContentLanguage,
     }}>
       {children}
     </ThemeContext.Provider>

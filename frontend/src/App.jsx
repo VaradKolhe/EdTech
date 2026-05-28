@@ -157,7 +157,7 @@ function App() {
               <Route
                 path="/student-dashboard/courses/:courseId/player"
                 element={
-                  <ProtectedRoute allowedRoles={["student"]}>
+                  <ProtectedRoute allowedRoles={["student", "admin", "instructor"]}>
                     <CoursePlayer />
                   </ProtectedRoute>
                 }
