@@ -78,10 +78,6 @@ export default function PaymentButton({ course, onEnrolled }) {
       });
       checkout.open();
     } catch (err) {
-      console.error("[DEBUG] Payment Flow Failed:", err);
-      if (err.response) {
-        console.error("[DEBUG] Server Response Error:", err.response.data);
-      }
       navigate(`/student-dashboard/payment/failure?courseId=${course._id}`);
     } finally {
       setLoading(false);
@@ -97,6 +93,24 @@ export default function PaymentButton({ course, onEnrolled }) {
       >
         Continue Learning
       </button>
+    );
+  }
+
+  if (course.access?.canAccessContent) {
+    return (
+      <div className="flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={() => navigate(`/student-dashboard/courses/${course._id}/player`)}
+          className="w-full rounded-xl bg-slate-900 px-5 py-3 text-sm font-black text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
+        >
+          Start Preview
+        </button>
+        <div className="w-full rounded-xl bg-slate-100 dark:bg-slate-800 p-4 text-center border-2 border-dashed border-slate-300 dark:border-slate-700">
+          <p className="text-xs font-black uppercase tracking-widest text-slate-500">Preview Mode Active</p>
+          <p className="text-[10px] text-slate-400 mt-1">No payment or enrollment required.</p>
+        </div>
+      </div>
     );
   }
 
