@@ -1,0 +1,114 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "courses": "Courses",
+    "profile": "Profile",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register",
+    "search": "Search",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "submit": "Submit",
+    "viewAll": "View all",
+    "password": "Password",
+    "email": "Email Address"
+  },
+  "navbar": {
+    "browse": "Browse",
+    "myCourses": "My Courses",
+    "instructorWorkspace": "Instructor Workspace",
+    "adminPanel": "Admin Panel"
+  },
+  "home": {
+    "heroBadge": "AI-Powered Multilingual Learning",
+    "heroTitle1": "Learn Smarter.",
+    "heroTitle2": "In Any Language.",
+    "heroSubtitle": "Experience the future of education with AI-driven course recommendations, multilingual content in Hindi, Marathi & English, and intelligent learning assistance.",
+    "getStartedStudent": "Get Started as Student",
+    "becomeInstructor": "Become an Instructor",
+    "poweredByAi": "Powered by AI",
+    "multilingualSupport": "Multilingual support",
+    "personalizedLearning": "Personalized Learning",
+    "featuresTitle": "Platform Core Features",
+    "featuresSubtitle": "Everything you need for a modern, global education experience.",
+    "feature1Title": "AI Recommendations",
+    "feature1Desc": "Personalized course suggestions based on your skill level, goals, and learning behavior.",
+    "feature2Title": "Multilingual Mastery",
+    "feature2Desc": "Courses available in English, Hindi, and Marathi to break all language barriers.",
+    "feature3Title": "Progress Analytics",
+    "feature3Desc": "Deep insights into your learning journey with module-level tracking and AI summaries.",
+    "feature4Title": "Certificate Templates",
+    "feature4Desc": "Admin-managed certificate templates are ready for future certificate generation.",
+    "forStudentsTitle": "For Students",
+    "forStudentsDesc": "Unlock your potential with courses tailored to your career goals. Watch high-quality videos, read AI-summarized materials, and take interactive quizzes in your preferred language.",
+    "forStudentsLi1": "Personalized AI Dashboard",
+    "forStudentsLi2": "Search Autocomplete Suggestions",
+    "forStudentsLi3": "Multi-language Content Switcher",
+    "joinAsStudent": "Join as Student",
+    "forInstructorsTitle": "For Instructors",
+    "forInstructorsDesc": "Share your knowledge globally. Upload content once and leverage AI to generate multilingual descriptions, summaries, and structured learning modules.",
+    "forInstructorsLi1": "AI-Assisted Content Creation",
+    "forInstructorsLi2": "Enrollment & Rating Analytics",
+    "forInstructorsLi3": "Secure Course Monetization",
+    "applyAsInstructor": "Apply as Instructor",
+    "footerDesc": "The next generation of AI-driven, multilingual e-learning. Built for a global audience with localized impact.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "copyright": "© 2026 EdTech AI Inc."
+  },
+  "dashboard": {
+    "welcome": "Welcome back, {{name}}!",
+    "recommendedCourses": "Recommended Courses",
+    "continueLearning": "Continue Learning",
+    "noEnrollments": "You haven't enrolled in any courses yet.",
+    "studentDashboard": "Student Dashboard",
+    "browseCourses": "Browse Courses",
+    "enrolled": "Enrolled",
+    "completed": "Completed",
+    "overallProgress": "Overall Progress",
+    "noActiveCourses": "No active courses yet.",
+    "preparingDashboard": "Preparing your dashboard...",
+    "recentActivity": "Recent activity",
+    "noActivity": "No activity recorded yet."
+  },
+  "auth": {
+    "welcomeBack": "Welcome Back",
+    "loginSubtitle": "Sign in to continue to your learning journey",
+    "signIn": "Sign In",
+    "signingIn": "Signing In...",
+    "forgotPassword": "Forgot password?",
+    "dontHaveAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "studentLogin": "Student Login",
+    "instructorLogin": "Instructor Login",
+    "loginTitle": "Log in to your account",
+    "alreadyHaveAccount": "Already have an account?"
+  },
+  "courses": {
+    "viewDetails": "View Details"
+  },
+  "courseDetails": {
+    "enrollNow": "Enroll Now"
+  },
+  "learning": {
+    "markComplete": "Mark as Complete"
+  },
+  "quiz": {
+    "submit": "Submit Quiz"
+  },
+  "course": {
+    "details": "Course Details",
+    "modules": "Modules",
+    "quizzes": "Quizzes",
+    "enroll": "Enroll Now",
+    "buy": "Buy Course",
+    "similarCourses": "Similar Courses",
+    "difficulty": "Difficulty",
+    "price": "Price",
+    "free": "Free"
+  }
+}
