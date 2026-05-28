@@ -9,8 +9,27 @@ import Quiz from "../models/Quiz.js";
 import User from "../models/User.js";
 import UserActivity from "../models/UserActivity.js";
 import RecommendationFeedback from "../models/RecommendationFeedback.js";
+import { checkCourseAccess } from "../utils/accessControl.js";
 import { createNotification } from "../services/notificationService.js";
 import { queueCertificateGeneration } from "../services/certificateService.js";
+
+const ML_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
+
+const fetchFromML = async (path, params = {}) => {
+  try {
+    const url = new URL(path, ML_URL);
+    Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
+    const response = await fetch(url.toString(), { signal: AbortSignal.timeout(2000) });
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`[ML_PROXY] Failed to fetch ${path}:`, error.message);
+    return null;
+  }
+};
 
 const LANGS = ["en", "hi", "mr"];
 const REQUIRED_PROFILE_FIELDS = [
@@ -149,8 +168,8 @@ const normalizeCourseDetail = (course, lang = "en", enrollment = null) => {
                 type: block.type,
                 title: localize(block.title, displayLang, block.type),
                 textContent: localize(block.textContent, displayLang, ""),
-                videoUrl: block.videoUrl,
-                videoFileName: block.videoFileName,
+                video: (block.video && block.video.url) ? block.video : (block.videoUrl ? { url: block.videoUrl, type: "external", provider: "direct" } : null),
+                videoUrl: block.video?.url || block.videoUrl || "",
                 durationMinutes: block.durationMinutes,
                 isPreview: block.isPreview,
                 quizId: block.quizId,
@@ -428,16 +447,13 @@ export const searchStudentCourses = async (req, res) => {
 export const getStudentCourseDetails = async (req, res) => {
   try {
     const lang = langFromRequest(req);
-    const filter = { _id: req.params.courseId };
-    if (req.user.role !== "admin") {
-      Object.assign(filter, publishedFilter);
-    }
-    const course = await Course.findOne(filter).populate(coursePopulate);
-    if (!course) return res.status(404).json({ message: "Course not found" });
-    const enrollment = await Enrollment.findOne({ userId: req.user._id, courseId: course._id });
-    const locked = course.isPaid && !enrollment && req.user.role !== "admin";
+    const { allowed, status, message, hasPreviewAccess, isLocked, course, enrollment, access } = 
+      await checkCourseAccess(req.user, req.params.courseId);
+
+    if (!course) return res.status(status).json({ message });
+
     const detail = normalizeCourseDetail(course, lang, enrollment);
-    if (locked) {
+    if (isLocked) {
       detail.modules = detail.modules.map((module) => ({
         ...module,
         submodules: module.submodules.map((submodule) => ({
@@ -445,18 +461,20 @@ export const getStudentCourseDetails = async (req, res) => {
           contentBlocks: submodule.contentBlocks.map((block) =>
             block.isPreview
               ? block
-              : { ...block, textContent: "", videoUrl: "", locked: true }
+              : { ...block, textContent: "", videoUrl: "", video: null, locked: true }
           ),
         })),
       }));
     }
+    
     await logActivity({
       userId: req.user._id,
       activityType: "COURSE_CLICK",
       courseId: course._id,
       metadata: { language: lang, page: "course_detail" },
     });
-    res.json({ course: detail, isLocked: locked });
+    
+    res.json({ course: detail, isLocked, isPreview: hasPreviewAccess, access });
   } catch (error) {
     res.status(500).json({ message: error.message || "Failed to fetch course" });
   }
@@ -518,10 +536,8 @@ export const enrollFreeCourse = async (req, res) => {
 };
 
 export const createPaymentOrder = async (req, res) => {
-  console.log("[DEBUG] Starting createPaymentOrder for Course:", req.params.courseId);
   try {
     const course = await findPublishedCourse(req.params.courseId);
-    console.log("[DEBUG] Course Found:", course ? course.title?.en : "NULL");
     
     if (!course) return res.status(404).json({ message: "Course not found" });
     if (!course.isPaid) return res.status(400).json({ message: "This course is free" });
@@ -530,15 +546,12 @@ export const createPaymentOrder = async (req, res) => {
     if (existing) return res.status(409).json({ message: "Already enrolled", enrollment: existing });
 
     const amount = Math.round(course.price * 100);
-    console.log("[DEBUG] Amount (paise):", amount);
-    console.log("[DEBUG] Keys Present:", !!process.env.RAZORPAY_KEY_ID, !!process.env.RAZORPAY_KEY_SECRET);
 
     let order = null;
     if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
       const keyId = process.env.RAZORPAY_KEY_ID.trim();
       const keySecret = process.env.RAZORPAY_KEY_SECRET.trim();
       
-      console.log("[DEBUG] Fetching Razorpay Order...");
       const response = await fetch("https://api.razorpay.com/v1/orders", {
         method: "POST",
         headers: {
@@ -554,13 +567,10 @@ export const createPaymentOrder = async (req, res) => {
       
       if (!response.ok) {
         const errText = await response.text();
-        console.error("[DEBUG] Razorpay API Error Response:", errText);
         return res.status(502).json({ message: "Razorpay order creation failed", details: errText });
       }
       order = await response.json();
-      console.log("[DEBUG] Razorpay Order Created:", order.id);
     } else {
-      console.warn("[DEBUG] Razorpay keys missing, falling back to DEV mode");
       order = { id: `order_dev_${Date.now()}`, amount, currency: "INR", devMode: true };
     }
 
@@ -574,14 +584,10 @@ export const createPaymentOrder = async (req, res) => {
       status: "CREATED",
     });
     
-    console.log("[DEBUG] Local Payment Record Created:", payment._id);
     res.status(201).json({ order, payment, keyId: process.env.RAZORPAY_KEY_ID || "" });
   } catch (error) {
-    console.error("[DEBUG] CRITICAL ERROR in createPaymentOrder:", error);
     res.status(500).json({ 
       message: error.message || "Payment order failed",
-      stack: error.stack,
-      debugContext: "createPaymentOrder Catch Block"
     });
   }
 };
@@ -632,11 +638,17 @@ export const verifyPayment = async (req, res) => {
 
 export const getCoursePlayer = async (req, res) => {
   try {
-    const course = await findPublishedCourse(req.params.courseId);
-    if (!course) return res.status(404).json({ message: "Course not found" });
-    const enrollment = await findActiveEnrollment(req.user._id, course._id);
-    if (!enrollment) return res.status(403).json({ message: "Enrollment required" });
-    res.json({ course: normalizeCourseDetail(course, langFromRequest(req), enrollment), enrollment });
+    const { allowed, status, message, hasPreviewAccess, course, enrollment, access } = 
+      await checkCourseAccess(req.user, req.params.courseId);
+
+    if (!allowed) return res.status(status).json({ message });
+
+    res.json({ 
+      course: normalizeCourseDetail(course, langFromRequest(req), enrollment), 
+      enrollment,
+      isPreview: hasPreviewAccess && !enrollment,
+      access
+    });
   } catch (error) {
     res.status(500).json({ message: error.message || "Failed to load player" });
   }
@@ -645,10 +657,12 @@ export const getCoursePlayer = async (req, res) => {
 export const completeContentBlock = async (req, res) => {
   try {
     const { moduleId, submoduleId, blockId, blockType, timeSpentSeconds = 0 } = req.body;
-    const course = await findPublishedCourse(req.params.courseId);
-    if (!course) return res.status(404).json({ message: "Course not found" });
-    const enrollment = await findActiveEnrollment(req.user._id, course._id);
-    if (!enrollment) return res.status(403).json({ message: "Enrollment required" });
+    const { allowed, status, message, hasPreviewAccess, enrollment, course } = 
+      await checkCourseAccess(req.user, req.params.courseId);
+
+    if (!enrollment) {
+      return res.status(200).json({ message: "Admin preview mode: progress not tracked", enrollment: null });
+    }
 
     const exists = enrollment.completedBlocks.some((item) => String(item.blockId) === String(blockId));
     if (!exists) {
@@ -733,24 +747,41 @@ export const completeContentBlock = async (req, res) => {
 
 export const submitQuiz = async (req, res) => {
   try {
-    const { courseId, moduleId, submoduleId, blockId, answers } = req.body;
+    const { moduleId, submoduleId, blockId, answers } = req.body;
+    const courseId = req.body.courseId || req.params.courseId;
     const { quizId } = req.params;
+
+    const { allowed, status, message, enrollment } = await checkCourseAccess(req.user, courseId);
+    if (!allowed) {
+      return res.status(status || 403).json({ message: message || "You do not have access to this course." });
+    }
+
+    // Only students MUST have an enrollment to save progress. 
+    // Admin/Instructor can test quizzes without enrollment.
+    if (!enrollment && req.user.role === "student") {
+      return res.status(403).json({ message: "Active enrollment required to submit quizzes and save progress." });
+    }
 
     const quiz = await Quiz.findById(quizId);
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
     let score = 0;
     quiz.questions.forEach((q) => {
-      if (String(answers[q.questionId]) === String(q.correctOptionId)) {
+      // Support both optionId matching and text matching for robustness
+      const submittedAnswer = String(answers[q.questionId]);
+      if (submittedAnswer === String(q.correctOptionId)) {
         score += q.marks;
+      } else {
+        // Fallback: check if the text matches the correct option text (useful for some legacy or edge cases)
+        const correctOpt = q.options.find(opt => String(opt.optionId) === String(q.correctOptionId));
+        if (correctOpt && (submittedAnswer === correctOpt.text.en || submittedAnswer === correctOpt.text.hi || submittedAnswer === correctOpt.text.mr)) {
+          score += q.marks;
+        }
       }
     });
 
     const percentage = Math.round((score / quiz.totalMarks) * 100);
     const passed = percentage >= (quiz.passingMarks / quiz.totalMarks) * 100;
-
-    const enrollment = await findActiveEnrollment(req.user._id, courseId);
-    if (!enrollment) return res.status(403).json({ message: "Enrollment required" });
 
     const result = {
       quizId,
@@ -761,31 +792,37 @@ export const submitQuiz = async (req, res) => {
       attemptedAt: new Date(),
     };
 
-    enrollment.quizResults.push(result);
+    if (enrollment) {
+      enrollment.quizResults.push(result);
 
-    if (passed) {
-      const exists = enrollment.completedBlocks.some(
-        (item) => String(item.blockId) === String(blockId)
-      );
-      if (!exists) {
-        enrollment.completedBlocks.push({
-          moduleId: toObjectId(moduleId),
-          submoduleId: toObjectId(submoduleId),
-          blockId: toObjectId(blockId),
-          blockType: "QUIZ",
-          completedAt: new Date(),
-        });
+      if (passed) {
+        const exists = enrollment.completedBlocks.some(
+          (item) => String(item.blockId) === String(blockId)
+        );
+        if (!exists) {
+          enrollment.completedBlocks.push({
+            moduleId: toObjectId(moduleId),
+            submoduleId: toObjectId(submoduleId),
+            blockId: toObjectId(blockId),
+            blockType: "QUIZ",
+            completedAt: new Date(),
+          });
+        }
+        const course = await Course.findById(courseId);
+        enrollment.progressPercentage = calculateProgress(course, enrollment.completedBlocks);
+        if (enrollment.progressPercentage >= 100) {
+          enrollment.status = "COMPLETED";
+          enrollment.completedAt ||= new Date();
+        }
       }
-      const course = await Course.findById(courseId);
-      enrollment.progressPercentage = calculateProgress(course, enrollment.completedBlocks);
-      if (enrollment.progressPercentage >= 100) {
-        enrollment.status = "COMPLETED";
-        enrollment.completedAt ||= new Date();
-      }
+      await enrollment.save();
     }
 
-    await enrollment.save();
-    res.json({ message: passed ? "Quiz passed!" : "Quiz failed.", result });
+    res.json({ 
+      message: passed ? "Quiz passed!" : "Quiz failed.", 
+      result,
+      isTestAttempt: !enrollment 
+    });
   } catch (error) {
     res.status(500).json({ message: error.message || "Quiz submission failed" });
   }
@@ -794,7 +831,13 @@ export const submitQuiz = async (req, res) => {
 export const getQuiz = async (req, res) => {
   try {
     const { courseId, quizId } = req.params;
-    if (req.user.role !== "admin") {
+    const course = await Course.findById(courseId);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    const isAdmin = req.user.role === "admin";
+    const isInstructor = String(course.instructorId) === String(req.user._id);
+    
+    if (!isAdmin && !isInstructor) {
       const enrollment = await findActiveEnrollment(req.user._id, courseId);
       if (!enrollment) return res.status(403).json({ message: "Enrollment required" });
     }
@@ -828,8 +871,12 @@ export const getQuiz = async (req, res) => {
 
 export const updateLastAccessed = async (req, res) => {
   try {
-    const enrollment = await findActiveEnrollment(req.user._id, req.params.courseId);
-    if (!enrollment) return res.status(404).json({ message: "Enrollment not found" });
+    const { allowed, status, message, enrollment, course } = 
+      await checkCourseAccess(req.user, req.params.courseId);
+
+    if (!enrollment) {
+      return res.status(200).json({ message: "Admin preview mode: position not tracked", enrollment: null });
+    }
     
     const { moduleId, submoduleId, blockId, blockType } = req.body;
     
@@ -953,6 +1000,18 @@ export const getDashboardRecommendations = async (req, res) => {
     if (String(req.params.userId) !== String(req.user._id) && req.user.role !== "admin") {
       return res.status(403).json({ message: "Not authorized for this user" });
     }
+
+    const lang = langFromRequest(req);
+    
+    // Try ML Service first (popular/generic for dashboard if no history)
+    const mlRecs = await fetchFromML("/search", { q: "programming", lang, top_n: 12 });
+    if (mlRecs?.length > 0) {
+      const courseIds = mlRecs.map(r => r.courseId);
+      const mlCourses = await Course.find({ _id: { $in: courseIds }, ...publishedFilter }).populate(coursePopulate);
+      const sortedCourses = courseIds.map(id => mlCourses.find(c => String(c._id) === String(id))).filter(Boolean);
+      return res.json({ source: "ml_service", recommendations: sortedCourses.map(c => normalizeCourse(c, lang)) });
+    }
+
     const enrolled = await Enrollment.find({ userId: req.params.userId }).select("courseId");
     const courses = await Course.find({
       ...publishedFilter,
@@ -968,11 +1027,64 @@ export const getDashboardRecommendations = async (req, res) => {
       .limit(12);
     res.json({
       source: "mongodb_fallback",
-      recommendations: courses.map((course) => normalizeCourse(course, langFromRequest(req))),
+      recommendations: courses.map((course) => normalizeCourse(course, lang)),
     });
   } catch (error) {
     res.status(500).json({ message: error.message || "Recommendations failed" });
   }
 };
 
-export const searchRecommendations = searchStudentCourses;
+export const searchRecommendations = async (req, res) => {
+  try {
+    const query = String(req.query.query || req.query.q || "").trim();
+    const lang = langFromRequest(req);
+
+    if (query) {
+      const mlResults = await fetchFromML("/search", { q: query, lang, top_n: 10 });
+      if (mlResults?.length > 0) {
+        const courseIds = mlResults.map(r => r.courseId);
+        const mlCourses = await Course.find({ _id: { $in: courseIds }, ...publishedFilter }).populate(coursePopulate);
+        const sortedCourses = courseIds.map(id => mlCourses.find(c => String(c._id) === String(id))).filter(Boolean);
+        return res.json({ source: "ml_service", query, courses: sortedCourses.map(c => normalizeCourse(c, lang)) });
+      }
+    }
+
+    // Fallback to standard DB search
+    return searchStudentCourses(req, res);
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Search failed" });
+  }
+};
+
+export const getSimilarCourses = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const lang = langFromRequest(req);
+
+    const mlResults = await fetchFromML(`/similar/${courseId}`, { lang, top_n: 5 });
+    if (mlResults?.length > 0) {
+      const courseIds = mlResults.map(r => r.courseId);
+      const mlCourses = await Course.find({ _id: { $in: courseIds }, ...publishedFilter }).populate(coursePopulate);
+      const sortedCourses = courseIds.map(id => mlCourses.find(c => String(c._id) === String(id))).filter(Boolean);
+      return res.json({ source: "ml_service", recommendations: sortedCourses.map(c => normalizeCourse(c, lang)) });
+    }
+
+    // Fallback: Fetch by category
+    const current = await Course.findById(courseId);
+    if (!current) return res.status(404).json({ message: "Course not found" });
+
+    const courses = await Course.find({
+      ...publishedFilter,
+      categoryId: current.categoryId,
+      _id: { $ne: current._id }
+    })
+    .populate(coursePopulate)
+    .limit(5);
+
+    res.json({ source: "mongodb_fallback", recommendations: courses.map(c => normalizeCourse(c, lang)) });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Similar courses failed" });
+  }
+};
+
+export const searchRecommendationsAlias = searchRecommendations;

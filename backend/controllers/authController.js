@@ -1,6 +1,7 @@
 import { randomBytes, createHash } from "crypto";
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
+import { sendPasswordResetEmail } from "../services/emailService.js";
 
 const publicUser = (user) => ({
   _id: user._id,
@@ -210,7 +211,14 @@ export const forgotPassword = async (req, res) => {
 
     await user.save();
 
-    // In a real app, send email here. 
+    try {
+      await sendPasswordResetEmail(user.email, resetToken);
+    } catch (emailError) {
+      console.error("Failed to send reset email:", emailError);
+      // We still return 200 to not reveal user existence, but log the error
+    }
+
+    // In development, return token in response to facilitate testing without SMTP.
     const isDev = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
     return res.json({
       message: "If an account exists, you will receive a reset link.",
@@ -236,13 +244,16 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired token" });
     }
 
+    // Set the virtual field 'password' so the pre-validate hook hashes it
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
+    
     await user.save();
 
-    res.json({ message: "Password reset successful" });
+    return res.json({ message: "Password reset successful" });
   } catch (error) {
-    res.status(500).json({ message: error.message || "Failed to reset password" });
+    console.error("Reset Password Error:", error);
+    return res.status(500).json({ message: "Failed to reset password" });
   }
 };

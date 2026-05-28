@@ -25,7 +25,10 @@ const geminiService = {
     const apiKey = (process.env.GEMINI_API_KEY || "").trim();
     
     if (!apiKey) {
-      throw new Error("Gemini API key is not configured. Please add it to your backend .env file.");
+      console.warn("[GEMINI] API key missing, returning mock response for development.");
+      return operation === "summarize" 
+        ? "MOCK SUMMARY: This is a simulated summary because GEMINI_API_KEY is not configured in .env."
+        : "MOCK ELABORATION: This is a simulated elaboration. The AI features require a valid Google Gemini API key to function properly.";
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);

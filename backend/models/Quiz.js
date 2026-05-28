@@ -28,6 +28,7 @@ const questionSchema = new mongoose.Schema(
     },
     questionText: { type: localizedTextSchema, default: () => ({}) },
     options: [optionSchema],
+    correctAnswerIndex: { type: Number, min: 0 },
     correctOptionId: { type: mongoose.Schema.Types.ObjectId, required: true },
     marks: { type: Number, default: 1, min: 0 },
   },

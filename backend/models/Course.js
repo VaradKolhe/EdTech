@@ -19,8 +19,16 @@ const contentBlockSchema = new mongoose.Schema(
     type: { type: String, enum: ["TEXT", "VIDEO", "QUIZ"], required: true },
     title: { type: localizedTextSchema, default: () => ({}) },
     textContent: { type: localizedTextSchema, default: () => ({}) },
-    videoUrl: { type: String, trim: true, default: "" },
-    videoFileName: { type: String, trim: true, default: "" },
+    video: {
+      type: { type: String, enum: ["upload", "external", null], default: null },
+      url: { type: String, trim: true, default: "" },
+      provider: { type: String, enum: ["local", "youtube", "vimeo", "direct", "other", null], default: null },
+      originalName: { type: String, trim: true, default: "" },
+      storedName: { type: String, trim: true, default: "" },
+      mimeType: { type: String, trim: true, default: "" },
+      size: { type: Number, default: 0 },
+      uploadedAt: { type: Date }
+    },
     durationMinutes: { type: Number, default: 0, min: 0 },
     isPreview: { type: Boolean, default: false },
     quizId: { type: mongoose.Schema.Types.ObjectId, ref: "Quiz" },
@@ -39,8 +47,7 @@ const submoduleSchema = new mongoose.Schema(
     submoduleTitle: { type: localizedTextSchema, default: () => ({}) },
     submoduleDescription: { type: localizedTextSchema, default: () => ({}) },
     contentBlocks: [contentBlockSchema],
-  },
-  { _id: false }
+  }
 );
 
 const moduleSchema = new mongoose.Schema(
@@ -53,8 +60,7 @@ const moduleSchema = new mongoose.Schema(
     moduleTitle: { type: localizedTextSchema, default: () => ({}) },
     moduleDescription: { type: localizedTextSchema, default: () => ({}) },
     submodules: [submoduleSchema],
-  },
-  { _id: false }
+  }
 );
 
 const courseSchema = new mongoose.Schema(
@@ -135,9 +141,19 @@ const courseSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["DRAFT", "PUBLISHED", "ARCHIVED"],
+      enum: ["DRAFT", "PENDING_REVIEW", "PAYMENT_PENDING", "PUBLISHED", "REJECTED", "ARCHIVED"],
       default: "DRAFT",
     },
+    submittedAt: Date,
+    reviewedAt: Date,
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    rejectionReason: { type: String, trim: true, default: "" },
+    platformFeePaid: { type: Boolean, default: false },
+    platformFeePaymentId: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" },
+    publishedAt: Date,
+    archivedAt: Date,
+    archivedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    archiveReason: { type: String, trim: true, default: "" },
   },
   { timestamps: true }
 );
