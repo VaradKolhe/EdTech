@@ -49,19 +49,22 @@ Detailed collections include:
     -   Use `instructor` instead of `teacher` for all variables, files, and UI text.
     -   Use `name` instead of `fullName` for user models and components.
     -   Use `isActive` instead of `isDeleted` for soft-delete logic.
+-   **Hierarchical Ordering:** When creating Modules, Submodules, or Content Blocks, the `order` field (integer, min 0) is **REQUIRED**. Ensure this is provided or calculated to avoid 400 validation errors.
 -   **ES Modules:** Used throughout the backend and frontend.
 -   **API Design:** Controller-route-model pattern.
--   **Multilingual Storage:** Fields like `title` and `description` are objects mapping language codes to strings (`en`, `hi`, `mr`).
+-   **Multilingual Storage:** Fields like `title` and `description` are objects mapping language codes to strings (`en`, `hi`, `mr`). Use `localized()` helper (backend) and `getLocalizedValue()` (frontend).
 -   **Vite Proxy:** Frontend calls `/api` which is proxied to `localhost:5001` (backend).
 
 ## Key Files
 -   `backend/server.js`: Main API entry point.
+-   `backend/controllers/courseController.js`: Central logic for course structure and state.
+-   `frontend/src/store/courseSlice.js`: Frontend state management for the course editor and player.
 -   `frontend/src/pages/Home.jsx`: Main landing page highlighting AI features.
 -   `frontend/src/pages/student/StudentDashboard.jsx`: AI-inspired dark-mode student interface.
--   `backend/scripts/dbSeed.js`: Database seeding script for local development.
 
 ## Project Status
 
--   **Phase 1 (Semantic Cleanup):** Completed. All roles standardized, naming conventions applied.
--   **UI Audit:** Completed. Identified critical functional gaps in Quiz UI and placeholder stubs (OAuth, Forgot Password).
--   **Current Focus:** Implementing real stateful logic for Quizzes and removing/filling UI placeholders.
+-   **Phase 1 (Semantic Cleanup):** Completed.
+-   **Infrastructure & Build:** Stabilized. Resolved duplicate import errors and API validation bugs in the Course Editor workflow.
+-   **UI Audit:** Completed. Identified critical functional gaps in Quiz UI and placeholder stubs.
+-   **Current Focus:** Implementing real stateful logic for Quizzes and completing the "Save & Publish" workflow in the Course Editor.
