@@ -21,9 +21,22 @@ export const deleteModule = createAsyncThunk("course/deleteModule", async (id) =
   return id;
 });
 
-export const addSubmodule = createAsyncThunk("course/addSubmodule", async (payload) => {
-  const { data } = await api.post("/submodules", payload);
-  return data;
+export const addSubmodule = createAsyncThunk("course/addSubmodule", async (payload, { rejectWithValue }) => {
+  try {
+    const { courseId, moduleId, ...body } = payload;
+    if (!courseId || !moduleId) throw new Error("courseId and moduleId are required");
+
+    const endpoint = `/instructor/courses/${courseId}/modules/${moduleId}/submodules`;
+    const { data } = await api.post(endpoint, body);
+    
+    return {
+      submodule: data.submodule,
+      moduleId: data.moduleId || moduleId,
+      courseId: data.courseId || courseId
+    };
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message || err.message || "Failed to add submodule");
+  }
 });
 
 export const updateSubmodule = createAsyncThunk("course/updateSubmodule", async ({ id, ...body }) => {
@@ -81,29 +94,33 @@ const courseSlice = createSlice({
       .addCase(fetchCourse.rejected, (s, a) => { s.loading = false; s.error = a.error.message; })
 
       .addCase(addModule.fulfilled, (s, a) => {
-        s.course.modules.push({ ...a.payload, submodules: [] });
+        const module = { ...a.payload, submodules: a.payload.submodules || [] };
+        s.course.modules.push(module);
       })
       .addCase(updateModule.fulfilled, (s, a) => {
-        const idx = s.course.modules.findIndex((m) => m._id === a.payload._id);
+        const idx = s.course.modules.findIndex((m) => (m._id || m.moduleId) === (a.payload._id || a.payload.moduleId));
         if (idx !== -1) s.course.modules[idx] = { ...s.course.modules[idx], ...a.payload };
       })
       .addCase(deleteModule.fulfilled, (s, a) => {
-        s.course.modules = s.course.modules.filter((m) => m._id !== a.payload);
+        s.course.modules = s.course.modules.filter((m) => (m._id || m.moduleId) !== a.payload);
       })
 
       .addCase(addSubmodule.fulfilled, (s, a) => {
-        const mod = s.course.modules.find((m) => m._id === a.payload.moduleId);
-        if (mod) mod.submodules.push(a.payload);
+        const mod = s.course.modules.find((m) => String(m._id || m.moduleId) === String(a.payload.moduleId));
+        if (mod) {
+          if (!mod.submodules) mod.submodules = [];
+          mod.submodules.push(a.payload.submodule);
+        }
       })
       .addCase(updateSubmodule.fulfilled, (s, a) => {
         s.course.modules.forEach((m) => {
-          const idx = m.submodules.findIndex((sm) => sm._id === a.payload._id);
+          const idx = m.submodules?.findIndex((sm) => (sm._id || sm.submoduleId) === (a.payload._id || a.payload.submoduleId));
           if (idx !== -1) m.submodules[idx] = { ...m.submodules[idx], ...a.payload };
         });
       })
       .addCase(deleteSubmodule.fulfilled, (s, a) => {
-        const mod = s.course.modules.find((m) => m._id === a.payload.moduleId);
-        if (mod) mod.submodules = mod.submodules.filter((sm) => sm._id !== a.payload.id);
+        const mod = s.course.modules.find((m) => (m._id || m.moduleId) === a.payload.moduleId);
+        if (mod) mod.submodules = mod.submodules.filter((sm) => (sm._id || sm.submoduleId) !== a.payload.id);
         if (s.activeSubmoduleId === a.payload.id) s.activeSubmoduleId = null;
       })
 

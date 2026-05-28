@@ -2,6 +2,10 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { saveBlocks, updateSubmodule } from "../store/courseSlice";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import api from "../api/axios";
+import { getLocalizedValue } from "../utils/localize";
+import ContentBlockViewer from "./student/ContentBlockViewer";
 import {
   PlusIcon, TrashIcon, ChevronUpIcon, ChevronDownIcon,
   SpeakerWaveIcon, EyeIcon, EyeSlashIcon, CheckIcon,
@@ -12,24 +16,27 @@ const LANG_LABEL = { en: "EN", hi: "HI", mr: "MR" };
 const EMPTY_BLOCKS = [];
 
 const hydrateBlocks = (blocks) =>
-  blocks.map((b, i) => ({ ...b, _tempId: b._id || `tmp-${i}` }));
+  (blocks || []).map((b, i) => ({ 
+    ...b, 
+    _tempId: b._tempId || b._id || b.blockId || `b-${i}-${Date.now()}` 
+  }));
 
 const newBlock = (type, order) => ({
-  _tempId: Math.random().toString(36).slice(2),
+  _tempId: `new-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   type,
   order,
-  content: { en: "", hi: "", mr: "" },
-  videoUrl: "",
-  videoTitle: { en: "", hi: "", mr: "" },
-  videoDuration: "",
+  title: { en: "", hi: "", mr: "" },
+  textContent: { en: "", hi: "", mr: "" },
+  video: { type: null, url: "", provider: null },
   quizQuestions: [],
 });
 
 const newQuestion = () => ({
-  _tempId: Math.random().toString(36).slice(2),
+  _tempId: `q-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   question: { en: "", hi: "", mr: "" },
   options: ["", "", "", ""],
   correctAnswer: "",
+  correctAnswerIndex: -1,
 });
 
 /* ── Rich text editor ───────────────────────────────────── */
@@ -142,7 +149,7 @@ function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
   const [collapsed, setCollapsed] = useState(false);
 
   const speak = () => {
-    const text = (block.content[lang] || "").replace(/<[^>]+>/g, "");
+    const text = (getLocalizedValue(block.textContent, lang) || "").replace(/<[^>]+>/g, "");
     if (!text) return;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
@@ -172,12 +179,12 @@ function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
           {isStudent ? (
             <div 
               className="prose dark:prose-invert prose-slate max-w-none text-slate-700 dark:text-slate-300 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: block.content[lang] || block.content.en || "<p className='italic text-slate-500'>No content available in this language.</p>" }}
+              dangerouslySetInnerHTML={{ __html: getLocalizedValue(block.textContent, lang) || "<p className='italic text-slate-500'>No content available in this language.</p>" }}
             />
           ) : (
             <RichTextEditor
-              value={block.content[lang] || ""}
-              onChange={(val) => onChange({ content: { ...block.content, [lang]: val } })}
+              value={getLocalizedValue(block.textContent, lang) || ""}
+              onChange={(val) => onChange({ textContent: { ...(block.textContent || {}), [lang]: val } })}
             />
           )}
         </div>
@@ -187,8 +194,36 @@ function TextBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
 }
 
 /* ── VIDEO block ─────────────────────────────────────────── */
-function VideoBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast, isStudent }) {
+function VideoBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast, isStudent, courseId, moduleId, submoduleId }) {
   const [preview, setPreview] = useState(true);
+  const [mode, setMode] = useState(block.video?.type === "external" ? "link" : "upload");
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("video", file);
+    try {
+      const res = await api.post(`/instructor/courses/${courseId}/modules/${moduleId}/submodules/${submoduleId}/upload-video`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      onChange({ video: res.data.video });
+    } catch {
+      alert("Video upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeVideo = () => {
+    onChange({ video: { type: null, url: "", provider: null, originalName: "", storedName: "", mimeType: "", size: 0 } });
+  };
+
+  const videoUrl = block.video?.url || block.videoUrl || "";
+  const videoTitle = getLocalizedValue(block.title || block.videoTitle, lang);
+
   return (
     <div className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
       <BlockHeader
@@ -209,37 +244,78 @@ function VideoBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, o
         {!isStudent ? (
           <div className="space-y-4 mb-6">
             <input
-              value={block.videoTitle[lang] || ""}
-              onChange={(e) => onChange({ videoTitle: { ...block.videoTitle, [lang]: e.target.value } })}
+              value={videoTitle || ""}
+              onChange={(e) => onChange({ title: { ...(block.title || {}), [lang]: e.target.value } })}
               placeholder={`Video title (${LANG_LABEL[lang]})...`}
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
             />
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <input
-                value={block.videoUrl || ""}
-                onChange={(e) => onChange({ videoUrl: e.target.value })}
-                placeholder="YouTube or S3 URL..."
-                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
-              />
-              <input
-                value={block.videoDuration || ""}
-                onChange={(e) => onChange({ videoDuration: e.target.value })}
-                placeholder="Duration"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder-gray-500 focus:border-primary sm:w-32"
-              />
+            
+            <div className="flex gap-2">
+              <button 
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${mode === "upload" ? "bg-brand-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white"}`}
+                onClick={() => setMode("upload")}
+              >
+                Upload File
+              </button>
+              <button 
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${mode === "link" ? "bg-brand-600 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white"}`}
+                onClick={() => setMode("link")}
+              >
+                External Link
+              </button>
             </div>
+
+            {mode === "link" ? (
+              <div className="flex flex-col gap-3 sm:flex-row items-center">
+                <input
+                  value={videoUrl}
+                  onChange={(e) => onChange({ video: { ...block.video, url: e.target.value, type: "external", provider: e.target.value.includes("youtube") ? "youtube" : "direct" } })}
+                  placeholder="YouTube, Vimeo, or Direct URL..."
+                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
+                />
+                <input
+                  value={block.durationMinutes || ""}
+                  onChange={(e) => onChange({ durationMinutes: Number(e.target.value) || 0 })}
+                  placeholder="Mins"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder-gray-500 focus:border-primary sm:w-24"
+                />
+                {videoUrl && (
+                  <button onClick={removeVideo} className="text-xs font-bold text-red-500 hover:text-red-400 px-2">
+                    Remove
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 sm:flex-row items-center bg-slate-50 dark:bg-white/5 p-4 rounded-xl border border-dashed border-slate-300 dark:border-white/10">
+                <input 
+                  type="file" 
+                  accept="video/*" 
+                  onChange={handleUpload} 
+                  disabled={uploading}
+                  className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+                />
+                {uploading && <span className="text-xs font-bold text-brand-600 animate-pulse">Uploading...</span>}
+                {!uploading && videoUrl?.startsWith("/uploads") && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-green-500 truncate max-w-[150px] block" title={block.video?.originalName}>
+                      ✓ {block.video?.originalName || "Video uploaded"}
+                    </span>
+                    <button onClick={removeVideo} className="text-xs font-bold text-red-500 hover:text-red-400">
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="mb-4">
             <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-              {block.videoTitle[lang] || block.videoTitle.en || "Course Video"}
+              {videoTitle || "Course Video"}
             </h4>
-            {block.videoDuration && (
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{block.videoDuration}</span>
-            )}
           </div>
         )}
-        {preview && block.videoUrl && <VideoEmbed url={block.videoUrl} />}
+        {preview && videoUrl && <VideoEmbed url={videoUrl} />}
       </div>
     </div>
   );
@@ -286,25 +362,21 @@ function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
             <div key={qi} className="rounded-2xl bg-slate-50 dark:bg-white/5 p-5 sm:p-6 border border-slate-100 dark:border-white/5">
               <p className="font-bold text-lg text-slate-900 dark:text-white mb-5">
                 <span className="text-brand-600 dark:text-brand-400 mr-2">Q{qi + 1}.</span>
-                {q.question[lang] || q.question.en || `Question ${qi + 1}`}
+                {getLocalizedValue(q.question, lang) || `Question ${qi + 1}`}
               </p>
               <div className="grid grid-cols-1 gap-3">
-                {q.options.filter(Boolean).map((opt, oi) => {
+                {q.options.map((opt, oi) => {
+                  const optText = getLocalizedValue(opt, lang);
                   const sel = answers[qi];
                   let cls = "w-full text-left px-5 py-3.5 rounded-xl text-sm font-semibold border transition-all ";
                   if (!sel) cls += "border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10";
-                  else if (sel === opt && opt === q.correctAnswer) cls += "border-green-500 bg-green-500/10 text-green-600 dark:text-green-300";
-                  else if (sel === opt) cls += "border-red-500 bg-red-500/10 text-red-600 dark:text-red-300";
-                  else if (opt === q.correctAnswer) cls += "border-green-500/50 bg-green-500/5 dark:bg-green-500/10 text-green-500 dark:text-green-400";
+                  else if (sel === optText && optText === q.correctAnswer) cls += "border-green-500 bg-green-500/10 text-green-600 dark:text-green-300";
+                  else if (sel === optText) cls += "border-red-500 bg-red-500/10 text-red-600 dark:text-red-300";
+                  else if (optText === q.correctAnswer) cls += "border-green-500/50 bg-green-500/5 dark:bg-green-500/10 text-green-500 dark:text-green-400";
                   else cls += "border-slate-100 dark:border-white/5 text-slate-400 dark:text-gray-500 opacity-60";
-                  return <button key={oi} onClick={() => !sel && setAnswers((a) => ({ ...a, [qi]: opt }))} className={cls}>{opt}</button>;
+                  return <button key={oi} onClick={() => !sel && setAnswers((a) => ({ ...a, [qi]: optText }))} className={cls}>{optText}</button>;
                 })}
               </div>
-              {answers[qi] && (
-                <div className={`mt-5 p-3 rounded-lg text-xs font-bold flex items-center gap-2 ${answers[qi] === q.correctAnswer ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400"}`}>
-                  {answers[qi] === q.correctAnswer ? "✓ Excellent! Correct answer." : `✗ Incorrect. The correct answer was: ${q.correctAnswer}`}
-                </div>
-              )}
             </div>
           ))
         ) : (
@@ -318,8 +390,8 @@ function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
                   </button>
                 </div>
                 <input
-                  value={q.question[lang] || ""}
-                  onChange={(e) => updateQuestion(qi, { question: { ...q.question, [lang]: e.target.value } })}
+                  value={getLocalizedValue(q.question, lang) || ""}
+                  onChange={(e) => updateQuestion(qi, { question: { ...(q.question || {}), [lang]: e.target.value } })}
                   placeholder={`Question text (${LANG_LABEL[lang]})...`}
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder-gray-500 focus:border-primary"
                 />
@@ -329,15 +401,30 @@ function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
                       <input
                         type="radio"
                         name={`correct-${block._tempId || block._id}-${qi}`}
-                        checked={q.correctAnswer === opt && opt !== ""}
-                        onChange={() => updateQuestion(qi, { correctAnswer: opt })}
+                        checked={(q.correctAnswerIndex === oi || (q.correctAnswer === getLocalizedValue(opt, lang) && q.correctAnswer !== "")) && getLocalizedValue(opt, lang) !== ""}
+                        onChange={() => updateQuestion(qi, { correctAnswer: getLocalizedValue(opt, lang), correctAnswerIndex: oi })}
                         className="accent-brand-600 w-4 h-4 flex-shrink-0"
                       />
                       <input
-                        value={opt}
+                        value={getLocalizedValue(opt, lang) || ""}
                         onChange={(e) => {
-                          updateOption(qi, oi, e.target.value);
-                          if (q.correctAnswer === opt) updateQuestion(qi, { correctAnswer: e.target.value });
+                          const val = e.target.value;
+                          const newOpt = { ...(typeof opt === 'object' ? opt : {}), [lang]: val };
+                          
+                          // Consolidate updates to avoid double state trigger
+                          const isCorrect = q.correctAnswerIndex === oi || (q.correctAnswer === getLocalizedValue(opt, lang) && q.correctAnswer !== "");
+                          
+                          const newQuestions = block.quizQuestions.map((question, i) => {
+                            if (i !== qi) return question;
+                            const newOptions = question.options.map((o, j) => j === oi ? newOpt : o);
+                            return { 
+                              ...question, 
+                              options: newOptions,
+                              ...(isCorrect ? { correctAnswer: val } : {})
+                            };
+                          });
+                          
+                          onChange({ quizQuestions: newQuestions });
                         }}
                         placeholder={`Option ${oi + 1}`}
                         className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white outline-none placeholder-gray-500 focus:border-primary"
@@ -345,11 +432,6 @@ function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
                     </div>
                   ))}
                 </div>
-                {q.correctAnswer && (
-                  <div className="flex items-center gap-2 text-xs font-bold text-green-400 bg-green-400/10 px-3 py-1.5 rounded-lg w-fit">
-                    <CheckIcon className="h-3 w-3" /> Correct: {q.correctAnswer}
-                  </div>
-                )}
               </div>
             ))}
             <button
@@ -366,12 +448,14 @@ function QuizBlock({ block, lang, onLangChange, onChange, onDelete, onMoveUp, on
 }
 
 /* ── Main ContentEditor ──────────────────────────────────── */
+
 export default function ContentEditor() {
   const dispatch = useDispatch();
   const { user } = useAuth();
+  const { appLanguage } = useTheme();
   const { activeSubmoduleId, submoduleContents, contentLoading, course } = useSelector((s) => s.course);
-  const [lang, setLang] = useState("en");
-  const [draft, setDraft] = useState({ submoduleId: null, sourceBlocks: EMPTY_BLOCKS, blocks: [] });
+  const [lang, setLang] = useState(appLanguage || "en");
+  const [draft, setDraft] = useState({ submoduleId: null, sourceBlocks: null, blocks: [] });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -381,15 +465,23 @@ export default function ContentEditor() {
   const isStudent = user?.role === "student";
 
   const contentData = submoduleContents[activeSubmoduleId];
-  const sourceBlocks = contentData?.blocks ?? EMPTY_BLOCKS;
-  const activeSubmodule = course?.modules?.flatMap((m) => m.submodules)?.find((sm) => sm._id === activeSubmoduleId);
-  let blocks = draft.blocks;
+  const sourceBlocks = contentData?.blocks || EMPTY_BLOCKS;
+  const activeSubmodule = course?.modules?.flatMap((m) => m.submodules)?.find((sm) => (sm._id || sm.submoduleId) === activeSubmoduleId);
+  const activeModule = course?.modules?.find(m => m.submodules?.some(sm => (sm._id || sm.submoduleId) === activeSubmoduleId));
+  const moduleId = activeModule?._id || activeModule?.moduleId || "draft";
 
-  if (draft.submoduleId !== activeSubmoduleId || draft.sourceBlocks !== sourceBlocks) {
-    blocks = hydrateBlocks(sourceBlocks);
-    setDraft({ submoduleId: activeSubmoduleId, sourceBlocks, blocks });
-    if (editingTitle) setEditingTitle(false);
-  }
+  useEffect(() => {
+    if (activeSubmoduleId && (draft.submoduleId !== activeSubmoduleId || draft.sourceBlocks !== sourceBlocks)) {
+      setDraft({
+        submoduleId: activeSubmoduleId,
+        sourceBlocks: sourceBlocks,
+        blocks: hydrateBlocks(sourceBlocks)
+      });
+      if (editingTitle) setEditingTitle(false);
+    }
+  }, [activeSubmoduleId, sourceBlocks, draft.submoduleId, draft.sourceBlocks, editingTitle]);
+
+  const blocks = draft.blocks;
 
   const setBlocks = useCallback((updater) => {
     if (isStudent) return;
@@ -477,7 +569,17 @@ export default function ContentEditor() {
     isFirst: idx === 0,
     isLast: idx === blocks.length - 1,
     isStudent,
+    courseId: course?._id || "draft",
+    moduleId,
+    submoduleId: activeSubmoduleId || "draft",
   });
+
+  const getVal = (field, fallback = "") => {
+    if (!field) return fallback;
+    if (typeof field === "string") return field;
+    const val = field[lang] || field.en || field.hi || field.mr || fallback;
+    return typeof val === "string" ? val : String(val || fallback);
+  };
 
   return (
     <div className="flex h-full min-w-0 flex-col bg-white dark:bg-[#0b0e14]">
@@ -517,7 +619,7 @@ export default function ContentEditor() {
         {isStudent ? (
           <div className="flex items-center justify-between gap-4">
             <h1 className="truncate text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">
-              {activeSubmodule?.title}
+              {getVal(activeSubmodule?.submoduleTitle || activeSubmodule?.title || "Lesson")}
             </h1>
             <LangTabs active={lang} onChange={setLang} />
           </div>
@@ -532,10 +634,10 @@ export default function ContentEditor() {
         ) : (
           <h1
             className="cursor-pointer truncate text-2xl font-black text-slate-900 dark:text-white transition-colors hover:text-brand-600 sm:text-3xl"
-            onClick={() => { setEditingTitle(true); setTitleVal(activeSubmodule?.title || ""); }}
+            onClick={() => { setEditingTitle(true); setTitleVal(getVal(activeSubmodule?.submoduleTitle || activeSubmodule?.title || "Lesson")); }}
             title="Click to rename"
           >
-            {activeSubmodule?.title}
+            {getVal(activeSubmodule?.submoduleTitle || activeSubmodule?.title || "Lesson")}
           </h1>
         )}
       </div>
@@ -568,10 +670,24 @@ export default function ContentEditor() {
         ) : (
           <div className="mx-auto max-w-5xl space-y-10">
             {blocks.map((block, idx) => {
-              const props = { key: block._tempId, block, ...sharedBlockProps(block, idx) };
-              if (block.type === "TEXT") return <TextBlock {...props} />;
-              if (block.type === "VIDEO") return <VideoBlock {...props} />;
-              if (block.type === "QUIZ") return <QuizBlock {...props} />;
+              const props = { block, ...sharedBlockProps(block, idx) };
+              const key = block._tempId || block._id || block.blockId || idx;
+              
+              if (isStudent) {
+                return (
+                  <div key={key} className="bg-white dark:bg-[#141820] border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
+                    <ContentBlockViewer 
+                      block={{ ...block, moduleId: activeModule?.moduleId || activeModule?._id, submoduleId: activeSubmoduleId }} 
+                      language={lang} 
+                      isPreview={true} 
+                    />
+                  </div>
+                );
+              }
+
+              if (block.type === "TEXT") return <TextBlock key={key} {...props} />;
+              if (block.type === "VIDEO") return <VideoBlock key={key} {...props} />;
+              if (block.type === "QUIZ") return <QuizBlock key={key} {...props} />;
               return null;
             })}
           </div>

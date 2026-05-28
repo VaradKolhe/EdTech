@@ -13,8 +13,10 @@ import { StarIcon } from "@heroicons/react/24/solid";
 import api from "../services/api";
 import Navbar from "../components/Navbar";
 import ContentBlockViewer from "../components/student/ContentBlockViewer";
+import { useAuth } from "../context/AuthContext";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { courseId } = useParams();
   const [outline, setOutline] = useState(null);
   const [active, setActive] = useState(null);
@@ -185,6 +187,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <ContentBlockViewer
+                          isPreview={user?.role === "admin"}
                           block={{
                             ...block,
                             title: block.title?.en || block.type,
