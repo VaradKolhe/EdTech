@@ -25,14 +25,10 @@ export default function ReportsSection() {
   const userPie = [
     { name: "Students", value: reports?.userCounts?.student ?? 0 },
     { name: "Instructors", value: reports?.userCounts?.instructor ?? 0 },
-    { name: "Admins", value: reports?.userCounts?.admin ?? 0 },
   ].filter((d) => d.value > 0);
 
-  const courseBar =
-    reports?.courseStats?.map((c) => ({
-      name: c._id,
-      count: c.count,
-    })) ?? [];
+  const courseBar = reports?.courseStats ?? [];
+  const topCourses = reports?.topCourses ?? [];
 
   return (
     <div className="space-y-6">
@@ -101,6 +97,32 @@ export default function ReportsSection() {
                 <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+          <h3 className="mb-4 font-semibold">Most Popular Courses (by Rating)</h3>
+          {topCourses.length === 0 ? (
+            <p className="text-slate-500">No rating data yet</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={topCourses} layout="vertical">
+                <XAxis type="number" domain={[0, 5]} hide />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  width={150}
+                  tick={{ fontSize: 11 }}
+                />
+                <Tooltip />
+                <Bar
+                  dataKey="rating"
+                  fill="#8b5cf6"
+                  radius={[0, 6, 6, 0]}
+                  label={{ position: "right", fontSize: 11 }}
+                />
               </BarChart>
             </ResponsiveContainer>
           )}

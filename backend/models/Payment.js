@@ -15,6 +15,11 @@ const paymentSchema = new mongoose.Schema(
       enum: ["CREATED", "SUCCESS", "FAILED", "REFUNDED"],
       default: "CREATED",
     },
+    purpose: {
+      type: String,
+      enum: ["COURSE_PURCHASE", "COURSE_PUBLISHING_FEE"],
+      default: "COURSE_PURCHASE",
+    },
     paymentMethod: {
       type: String,
       enum: ["UPI", "CARD", "NETBANKING", "WALLET", "UNKNOWN"],

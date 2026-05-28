@@ -28,7 +28,7 @@ export const getInstructors = async (req, res) => {
 
 export const updateInstructorVerification = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, rejectionReason } = req.body;
     const nextStatus = String(status || "").toUpperCase();
     if (!["APPROVED", "REJECTED", "PENDING", "NOT_APPLIED"].includes(nextStatus)) {
       return res.status(400).json({ message: "Invalid verification status" });
@@ -37,6 +37,7 @@ export const updateInstructorVerification = async (req, res) => {
       { _id: req.params.id, role: "instructor", isActive: true },
       {
         "instructorProfile.verification.status": nextStatus,
+        "instructorProfile.verification.rejectionReason": rejectionReason || "",
         "instructorProfile.verification.reviewedBy": req.user._id,
         "instructorProfile.verification.reviewedAt": new Date(),
       },

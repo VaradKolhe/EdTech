@@ -8,7 +8,7 @@ export default function PrivacyPolicy() {
         <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-8">Privacy Policy</h1>
         <div className="prose prose-slate dark:prose-invert max-w-none">
           <p>Last updated: May 23, 2026</p>
-          <p>Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information when you use the EduLearn platform.</p>
+          <p>Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information when you use the EdTech platform.</p>
           <h2>1. Information We Collect</h2>
           <p>We collect information you provide directly to us, such as when you create an account, enroll in a course, or contact support. This may include your name, email address, and profile details.</p>
           <h2>2. How We Use Your Information</h2>

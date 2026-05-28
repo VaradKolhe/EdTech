@@ -1,6 +1,7 @@
-import crypto from "crypto";
+import { randomBytes, createHash } from "crypto";
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
+import { sendPasswordResetEmail } from "../services/emailService.js";
 
 const publicUser = (user) => ({
   _id: user._id,
@@ -79,12 +80,12 @@ export const registerInstructor = async (req, res) => {
       instructorProfile: {
         bio,
         expertise: Array.isArray(expertise) ? expertise : [expertise].filter(Boolean),
-        verification: { status: "PENDING" },
+        verification: { status: "NOT_APPLIED" },
       },
     });
 
     res.status(201).json({
-      message: "Instructor registered successfully. Awaiting admin approval.",
+      message: "Instructor registered successfully. Please complete verification onboarding.",
       user: publicUser(user),
     });
   } catch (error) {
@@ -108,14 +109,6 @@ export const login = async (req, res) => {
     }
     if (!user.isActive) {
       return res.status(403).json({ message: "Account is inactive" });
-    }
-    if (
-      user.role === "instructor" &&
-      user.instructorProfile?.verification?.status === "REJECTED"
-    ) {
-      return res.status(403).json({
-        message: "Your instructor account has been rejected. Contact support.",
-      });
     }
 
     res.json({ message: "Login successful", user: publicUser(user) });
@@ -164,31 +157,76 @@ export const getMe = async (req, res) => {
   res.json({ user: publicUser(req.user) });
 };
 
+export const submitVerification = async (req, res) => {
+  try {
+    const { workEmail, links, bio, expertise } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (user.role !== "instructor") {
+      return res.status(403).json({ message: "Only instructors can submit verification" });
+    }
+
+    const fileDocs = (req.files || []).map((file, index) => ({
+      name: `Document ${index + 1}`,
+      url: `/uploads/verification/${file.filename}`,
+      type: file.mimetype.includes("pdf") ? "CERTIFICATE" : "OTHER",
+    }));
+
+    user.instructorProfile.verification = {
+      ...user.instructorProfile.verification,
+      status: "PENDING",
+      workEmail: workEmail || user.instructorProfile.verification.workEmail,
+      links: Array.isArray(links) ? links : typeof links === "string" ? [links] : user.instructorProfile.verification.links,
+      documents: fileDocs.length > 0 ? fileDocs : user.instructorProfile.verification.documents,
+      submittedAt: new Date(),
+    };
+
+    if (bio) user.instructorProfile.bio = bio;
+    if (expertise) user.instructorProfile.expertise = expertise;
+
+    await user.save();
+    res.json({ message: "Verification submitted", user: publicUser(user) });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Submission failed" });
+  }
+};
+
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ message: "Valid email is required" });
+    }
+    
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    user.resetPasswordToken = crypto
-      .createHash("sha256")
+    const resetToken = randomBytes(32).toString("hex");
+    user.resetPasswordToken = createHash("sha256")
       .update(resetToken)
       .digest("hex");
-    user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
+    user.resetPasswordExpire = new Date(Date.now() + 3600000); // 1 hour
 
     await user.save();
 
-    // In a real app, send email here. 
+    try {
+      await sendPasswordResetEmail(user.email, resetToken);
+    } catch (emailError) {
+      console.error("Failed to send reset email:", emailError);
+      // We still return 200 to not reveal user existence, but log the error
+    }
+
     // In development, return token in response to facilitate testing without SMTP.
-    res.json({
+    const isDev = process.env.NODE_ENV === "development" || !process.env.NODE_ENV;
+    return res.json({
       message: "If an account exists, you will receive a reset link.",
-      resetToken: process.env.NODE_ENV === "development" ? resetToken : undefined,
+      resetToken: isDev ? resetToken : undefined,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message || "Failed to process request" });
+    console.error("Forgot Password Error:", error);
+    return res.status(500).json({ message: "Failed to process password reset request" });
   }
 };
 
@@ -206,13 +244,16 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired token" });
     }
 
+    // Set the virtual field 'password' so the pre-validate hook hashes it
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
+    
     await user.save();
 
-    res.json({ message: "Password reset successful" });
+    return res.json({ message: "Password reset successful" });
   } catch (error) {
-    res.status(500).json({ message: error.message || "Failed to reset password" });
+    console.error("Reset Password Error:", error);
+    return res.status(500).json({ message: "Failed to reset password" });
   }
 };

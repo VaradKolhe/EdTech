@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { registerInstructor } from "../../api/authApi";
 import AuthLayout from "../../components/layout/AuthLayout";
 import Button from "../../components/ui/Button";
@@ -20,6 +21,8 @@ export default function InstructorRegister() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -40,7 +43,7 @@ export default function InstructorRegister() {
         bio: { en: form.qualification },
       });
       persistAuth(data.user);
-      navigate(getRoleRedirectPath("instructor"));
+      navigate(getRoleRedirectPath(data.user));
     } catch (err) {
       setError(
         err.response?.data?.message || "Registration failed. Please try again."
@@ -79,24 +82,52 @@ export default function InstructorRegister() {
           onChange={handleChange}
           required
         />
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          label="Password"
-          value={form.password}
-          onChange={handleChange}
-          required
-        />
-        <Input
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          label="Confirm Password"
-          value={form.confirmPassword}
-          onChange={handleChange}
-          required
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            label="Password"
+            value={form.password}
+            onChange={handleChange}
+            required
+            className="pr-12"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-[38px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+          >
+            {showPassword ? (
+              <EyeSlashIcon className="h-5 w-5" />
+            ) : (
+              <EyeIcon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+        <div className="relative">
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type={showConfirmPassword ? "text" : "password"}
+            label="Confirm Password"
+            value={form.confirmPassword}
+            onChange={handleChange}
+            required
+            className="pr-12"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-3 top-[38px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+          >
+            {showConfirmPassword ? (
+              <EyeSlashIcon className="h-5 w-5" />
+            ) : (
+              <EyeIcon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
         <Input
           id="qualification"
           name="qualification"
@@ -143,3 +174,4 @@ export default function InstructorRegister() {
     </AuthLayout>
   );
 }
+

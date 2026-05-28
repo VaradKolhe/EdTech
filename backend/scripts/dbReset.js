@@ -29,14 +29,25 @@ export const resetDatabase = async ({ force = false } = {}) => {
     throw new Error("Missing MONGO_URI");
   }
 
-  await mongoose.connect(process.env.MONGO_URI);
+  const mongoUri = process.env.MONGO_URI;
+  const options = {};
+  // If URI doesn't explicitly contain a database name before the query params, 
+  // or if we want to ensure it uses 'edtech'
+  if (!mongoUri.includes("/edtech")) {
+     options.dbName = "edtech";
+  }
+
+  await mongoose.connect(mongoUri, options);
+  const db = mongoose.connection.db;
   const dbName = mongoose.connection.name;
   console.warn(`WARNING: deleting final-schema collections from database: ${dbName}`);
 
   for (const name of FINAL_COLLECTIONS) {
-    if ((await mongoose.connection.db.listCollections({ name }).toArray()).length) {
-      await mongoose.connection.db.collection(name).deleteMany({});
+    try {
+      await db.collection(name).deleteMany({});
       console.log(`Cleared ${name}`);
+    } catch (err) {
+      // Collection might not exist, skip
     }
   }
 };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCourse } from "../../store/courseSlice";
@@ -43,7 +43,7 @@ export default function CourseEditor() {
     <div className="flex h-screen flex-col overflow-hidden bg-slate-50 dark:bg-[#0b0e14]">
       <Navbar />
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <Sidebar courseId={courseId} modules={course?.modules || []} />
+        <Sidebar courseId={course?._id || courseId} modules={course?.modules || []} />
         <main className="flex-1 overflow-hidden">
           <ContentEditor />
         </main>

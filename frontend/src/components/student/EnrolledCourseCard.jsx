@@ -1,8 +1,13 @@
 import { Link } from "react-router-dom";
 import { AcademicCapIcon, LanguageIcon } from "@heroicons/react/24/outline";
 import ProgressBar from "./ProgressBar";
+import { useTheme } from "../../context/ThemeContext";
+import { getLocalizedValue } from "../../utils/localize";
 
 export default function EnrolledCourseCard({ course }) {
+  const { effectiveCourseContentLanguage } = useTheme();
+  const title = getLocalizedValue(course.title, effectiveCourseContentLanguage, "Course");
+
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#161b22]">
       <div className="grid gap-5 p-5 sm:grid-cols-[13rem_1fr]">
@@ -10,7 +15,7 @@ export default function EnrolledCourseCard({ course }) {
           {course.thumbnailUrl || course.thumbnail ? (
             <img
               src={course.thumbnailUrl || course.thumbnail}
-              alt={course.title}
+              alt={title}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -28,9 +33,11 @@ export default function EnrolledCourseCard({ course }) {
               {(course.languageAvailable || []).join(", ").toUpperCase()}
             </span>
           </div>
-          <h3 className="mt-2 line-clamp-2 text-xl font-black text-slate-900 dark:text-white">
-            {course.title}
-          </h3>
+          <Link to={`/student-dashboard/courses/${course._id}`}>
+            <h3 className="mt-2 line-clamp-2 text-xl font-black text-slate-900 transition hover:text-brand-600 dark:text-white dark:hover:text-brand-500">
+              {title}
+            </h3>
+          </Link>
           <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
             {course.instructor?.name || "Instructor"} · {course.category || "General"}
           </p>
@@ -45,7 +52,7 @@ export default function EnrolledCourseCard({ course }) {
             to={`/student-dashboard/courses/${course._id}/player`}
             className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-brand-600 px-4 py-3 text-sm font-black text-white transition hover:bg-brand-700 sm:w-fit"
           >
-            Continue Learning
+            {(course.progress ?? course.enrollment?.progressPercentage ?? 0) > 0 ? "Continue Learning" : "Start Learning"}
           </Link>
         </div>
       </div>

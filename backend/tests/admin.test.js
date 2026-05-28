@@ -22,11 +22,12 @@ describe("Module 9: Admin Monitoring", () => {
     const cat = await Category.create({ name: { en: "Test" }, slug: "test" });
     const course = await Course.create({ title: { en: "Bad Course" }, instructorId: new mongoose.Types.ObjectId(), categoryId: cat._id, difficulty: "Beginner" });
 
-    // Rejection logic typically deletes or archives.
     const res = await request(app)
-      .delete(`/api/admin/moderation/courses/${course._id}`)
-      .set("Authorization", `Bearer ${token}`);
+      .patch(`/api/admin/courses/${course._id}/archive`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ reason: "Policy violation" });
 
+    if (res.status !== 200) console.error("TC-41 Error:", res.body);
     expect(res.status).toBe(200);
     const updated = await Course.findById(course._id);
     expect(updated.status).toBe("ARCHIVED");
@@ -37,10 +38,10 @@ describe("Module 9: Admin Monitoring", () => {
     const student = await User.create({ name: "Student", email: "stud@example.com", password: "Password123!", role: "student" });
 
     const res = await request(app)
-      .delete(`/api/admin/moderation/users/${student._id}`)
-      .set("Authorization", `Bearer ${token}`)
-      .query({ role: "student" });
+      .delete(`/api/admin/students/${student._id}`)
+      .set("Authorization", `Bearer ${token}`);
 
+    if (res.status !== 200) console.error("TC-42 Error:", res.body);
     expect(res.status).toBe(200);
     const updated = await User.findById(student._id);
     expect(updated.isActive).toBe(false);

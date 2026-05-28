@@ -12,4 +12,7 @@ export const getMe = () => api.get("/auth/me");
 
 export const updateProfile = (data) => api.patch("/auth/profile", data);
 
-export const changePassword = (data) => api.post("/auth/change-password", data);
+export const changePassword = (data) => api.post("/change-password", data);
+
+export const submitVerification = (data) =>
+  api.post("/auth/verification/submit", data);

@@ -42,5 +42,7 @@ export const getDashboardRecommendations = (userId, params) =>
   api.get(`/recommendations/dashboard/${userId}`, { params });
 export const searchRecommendations = (params) =>
   api.get("/recommendations/search", { params });
+export const getSimilarCourses = (courseId, params) =>
+  api.get(`/recommendations/similar/${courseId}`, { params });
 export const submitRecommendationFeedback = (data) =>
   api.post("/recommendations/feedback", data);

@@ -7,9 +7,11 @@ import {
   PlusIcon,
   StarIcon,
   UserGroupIcon,
+  CheckBadgeIcon,
 } from "@heroicons/react/24/outline";
 import api from "../services/api";
 import Navbar from "../components/Navbar";
+import { useAuth } from "../context/AuthContext";
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
@@ -17,7 +19,20 @@ const currency = new Intl.NumberFormat("en-IN", {
   maximumFractionDigits: 0,
 });
 
+const getStatusBadge = (status) => {
+  const styles = {
+    DRAFT: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+    PENDING_REVIEW: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
+    PAYMENT_PENDING: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+    PUBLISHED: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400",
+    REJECTED: "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400",
+    ARCHIVED: "bg-slate-100 text-slate-400",
+  };
+  return styles[status] || styles.DRAFT;
+};
+
 export default function CoursesPage() {
+  const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [stats, setStats] = useState({ courses: 0, enrollments: 0, averageRating: "0.0" });
   const [loading, setLoading] = useState(true);
@@ -32,11 +47,15 @@ export default function CoursesPage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [sortBy, setSortBy] = useState("updatedAt");
   const navigate = useNavigate();
 
   const load = () => {
     setLoading(true);
-    Promise.all([api.get("/instructor/courses"), api.get("/instructor/stats")])
+    Promise.all([
+      api.get("/instructor/courses", { params: { sortBy } }),
+      api.get("/instructor/stats"),
+    ])
       .then(([coursesRes, statsRes]) => {
         setCourses(coursesRes.data);
         setStats(statsRes.data);
@@ -45,7 +64,7 @@ export default function CoursesPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
+  useEffect(load, [sortBy]);
 
   const handleCreate = async (event) => {
     event.preventDefault();
@@ -76,6 +95,27 @@ export default function CoursesPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0b0e14]">
       <Navbar />
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {user?.instructorProfile?.verification?.status !== "APPROVED" && (
+          <div className="mb-8 rounded-3xl bg-brand-600 p-6 text-white shadow-xl shadow-brand-600/20">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-tight">Complete your verification</h2>
+                <p className="mt-1 text-sm font-bold text-brand-100">
+                  {user?.instructorProfile?.verification?.status === "PENDING" 
+                    ? "Your application is under review. You can still update your details." 
+                    : "You haven't submitted your verification yet. Start now to unlock all features."}
+                </p>
+              </div>
+              <button 
+                onClick={() => navigate("/instructor-onboarding")}
+                className="rounded-xl bg-white px-6 py-3 text-sm font-black text-brand-600 transition-transform active:scale-95"
+              >
+                {user?.instructorProfile?.verification?.status === "NOT_APPLIED" ? "Start Verification →" : "Update Details →"}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-4xl font-black text-slate-900 dark:text-white">
@@ -83,13 +123,27 @@ export default function CoursesPage() {
             </h1>
             <p className="mt-2 text-slate-500">Manage courses, content, and learner outcomes.</p>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-black text-white"
-          >
-            <PlusIcon className="h-5 w-5" />
-            New course
-          </button>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400">Sort by:</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold outline-none focus:border-brand-500 dark:border-slate-800 dark:bg-[#161b22] dark:text-white"
+              >
+                <option value="updatedAt">Recently Updated</option>
+                <option value="enrollments">Most Enrolled</option>
+                <option value="rating">Highest Rated</option>
+              </select>
+            </div>
+            <button
+              onClick={() => setShowForm(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-black text-white"
+            >
+              <PlusIcon className="h-5 w-5" />
+              New course
+            </button>
+          </div>
         </div>
 
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
@@ -201,16 +255,35 @@ export default function CoursesPage() {
                   )}
                 </div>
                 <div className="p-5">
-                  <div className="mb-3 flex items-center justify-between text-xs font-bold text-slate-500">
-                    <span>{course.status}</span>
-                    <span>{course.price > 0 ? currency.format(course.price) : "FREE"}</span>
+                  <div className="mb-3 flex items-center justify-between text-xs font-bold">
+                    <span className={`rounded-full px-2 py-0.5 ${getStatusBadge(course.status)}`}>
+                      {course.status.replace("_", " ")}
+                    </span>
+                    <span className="text-slate-500">{course.price > 0 ? currency.format(course.price) : "FREE"}</span>
                   </div>
                   <h2 className="line-clamp-2 text-lg font-black text-slate-900 dark:text-white">
                     {course.title?.en || "Untitled course"}
                   </h2>
-                  <p className="mt-2 line-clamp-2 text-sm text-slate-500">
-                    {course.shortDescription?.en || course.description?.en || "No description yet."}
-                  </p>
+                  <div className="mt-2 flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                    <span>{course.instructorId?.name || "Instructor"}</span>
+                    {course.instructorId?.instructorProfile?.verification?.status === "APPROVED" && (
+                      <CheckBadgeIcon className="h-4 w-4 text-emerald-500 fill-emerald-500/10" title="Verified Instructor" />
+                    )}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <div className="flex items-center gap-4 text-xs font-semibold text-slate-500">
+                      <span className="flex items-center gap-1 text-amber-500">
+                        <StarIcon className="h-4 w-4 fill-amber-500" />
+                        <span className="font-black text-slate-700 dark:text-slate-200">
+                          {Number(course.metrics?.averageRating || 0).toFixed(1)}
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <UserGroupIcon className="h-4 w-4" />
+                        {course.metrics?.totalEnrollments || 0}
+                      </span>
+                    </div>
+                  </div>
                   <button
                     onClick={() => navigate(`/instructor-dashboard/courses/${course._id}`)}
                     className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-black text-white dark:bg-white dark:text-slate-900"

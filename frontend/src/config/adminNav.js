@@ -6,6 +6,5 @@ export const ADMIN_NAV_ITEMS = [
   { path: "courses", label: "Courses" },
   { path: "feedback", label: "Feedback Analytics" },
   { path: "certificates", label: "Certificates" },
-  { path: "moderation", label: "Moderation" },
   { path: "reports", label: "Reports" },
 ];

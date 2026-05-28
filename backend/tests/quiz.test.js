@@ -19,7 +19,7 @@ describe("Module 5: Quiz & Assessment", () => {
     const token = jwt.sign({ id: student._id, role: "student" }, process.env.JWT_SECRET || "secret");
     
     const cat = await Category.create({ name: { en: "Test" }, slug: "test" });
-    const course = await Course.create({ title: { en: "Test Course" }, instructorId: new mongoose.Types.ObjectId(), categoryId: cat._id, difficulty: "Beginner" });
+    const course = await Course.create({ title: { en: "Test Course" }, instructorId: new mongoose.Types.ObjectId(), categoryId: cat._id, difficulty: "Beginner", status: "PUBLISHED" });
     
     const q1Id = new mongoose.Types.ObjectId();
     const q1Opt1 = new mongoose.Types.ObjectId();
@@ -130,6 +130,7 @@ describe("Module 5: Quiz & Assessment", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({ answers: {} });
 
+    if (res.status !== 403) console.error("TC-28 error:", res.body);
     expect(res.status).toBe(403);
     expect(res.body.message).toMatch(/enrollment required/i);
   });

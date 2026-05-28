@@ -12,6 +12,14 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Attach current language
+  const language = localStorage.getItem("appLanguage") || localStorage.getItem("language") || "en";
+  config.params = {
+    ...config.params,
+    language: config.params?.language || language,
+  };
+
   return config;
 });
 

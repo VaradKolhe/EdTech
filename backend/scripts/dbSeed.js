@@ -11,27 +11,54 @@ import Rating from "../models/Rating.js";
 import UserActivity from "../models/UserActivity.js";
 import RecommendationFeedback from "../models/RecommendationFeedback.js";
 import Notification from "../models/Notification.js";
+import Payment from "../models/Payment.js";
 
 dotenv.config();
+console.log("Starting dbSeed.js...");
 
 const password = "Password123!";
 
 const t = (en, hi = "", mr = "") => ({ en, hi, mr });
 const oid = () => new mongoose.Types.ObjectId();
 
-const makeBlock = ({ order, type, title, text = "", videoUrl = "", quizId, isPreview = false }) => ({
-  blockId: oid(),
-  order,
-  type,
-  title: t(title),
-  textContent: t(text),
-  videoUrl,
-  videoFileName: "",
-  durationMinutes: type === "VIDEO" ? 8 + order : 0,
-  isPreview,
-  quizId,
-  isRequiredForCompletion: true,
-});
+const makeBlock = ({ order, type, title, text = "", videoUrl = "", quizId, isPreview = false }) => {
+  let titleHi = "अध्याय";
+  let titleMr = "धडा";
+  if (title === "Overview") {
+    titleHi = "अवलोकन";
+    titleMr = "आढावा";
+  } else if (title === "Intro video") {
+    titleHi = "परिचय वीडियो";
+    titleMr = "परिचय व्हिडिओ";
+  } else if (title === "Knowledge check") {
+    titleHi = "ज्ञान की जांच";
+    titleMr = "ज्ञान चाचणी";
+  }
+
+  const block = {
+    blockId: oid(),
+    order,
+    type,
+    title: t(title, titleHi, titleMr),
+    textContent: t(
+      text,
+      text.replace("Welcome to", "स्वागत है").replace("This lesson introduces the core ideas.", "यह पाठ मुख्य विचारों का परिचय देता है।"),
+      text.replace("Welcome to", "स्वागत आहे").replace("This lesson introduces the core ideas.", "हा धडा मुख्य कल्पनांची ओळख करून देतो.")
+    ),
+    durationMinutes: type === "VIDEO" ? 8 + order : 0,
+    isPreview,
+    quizId,
+    isRequiredForCompletion: true,
+  };
+  if (type === "VIDEO" && videoUrl) {
+    block.video = {
+      type: "external",
+      url: videoUrl,
+      provider: videoUrl.includes("youtube") ? "youtube" : "direct",
+    };
+  }
+  return block;
+};
 
 const makeFullModules = (courseTitle, quizId) => {
   const moduleId = oid();
@@ -41,14 +68,14 @@ const makeFullModules = (courseTitle, quizId) => {
       {
         moduleId,
         order: 1,
-        moduleTitle: t(`${courseTitle} Foundations`),
-        moduleDescription: t("Core concepts and setup."),
+        moduleTitle: t(`${courseTitle} Foundations`, `${courseTitle} की नींव`, `${courseTitle} चा पाया`),
+        moduleDescription: t("Core concepts and setup.", "मुख्य अवधारणाएं और सेटअप।", "मुख्य संकल्पना आणि सेटअप."),
         submodules: [
           {
             submoduleId,
             order: 1,
-            submoduleTitle: t("Getting started"),
-            submoduleDescription: t("Understand the topic and complete the first activity."),
+            submoduleTitle: t("Getting started", "शुरू करना", "सुरुवात करणे"),
+            submoduleDescription: t("Understand the topic and complete the first activity.", "विषय को समझें और पहली गतिविधि पूरी करें।", "विषय समजून घ्या आणि पहिली क्रिया पूर्ण करा."),
             contentBlocks: [
               makeBlock({
                 order: 1,
@@ -76,21 +103,30 @@ const makeFullModules = (courseTitle, quizId) => {
 };
 
 const usersData = [
-  ["Asha Admin", "admin1@edulearn.local", "admin"],
-  ["Ravi Admin", "admin2@edulearn.local", "admin"],
-  ["Isha Instructor", "instructor1@edulearn.local", "instructor"],
-  ["Kabir Instructor", "instructor2@edulearn.local", "instructor"],
-  ["Meera Instructor", "instructor3@edulearn.local", "instructor"],
-  ["Neha Student", "student1@edulearn.local", "student"],
-  ["Arjun Student", "student2@edulearn.local", "student"],
-  ["Sara Student", "student3@edulearn.local", "student"],
-  ["Dev Student", "student4@edulearn.local", "student"],
-  ["Priya Student", "student5@edulearn.local", "student"],
+  ["Asha Admin", "admin1@edtech.local", "admin"],
+  ["Ravi Admin", "admin2@edtech.local", "admin"],
+  ["Isha Instructor", "instructor1@edtech.local", "instructor", "APPROVED"],
+  ["Kabir Instructor", "instructor2@edtech.local", "instructor", "APPROVED"],
+  ["Meera Instructor", "instructor3@edtech.local", "instructor", "PENDING"],
+  ["Neha Student", "student1@edtech.local", "student"],
+  ["Arjun Student", "student2@edtech.local", "student"],
+  ["Sara Student", "student3@edtech.local", "student"],
+  ["Dev Student", "student4@edtech.local", "student"],
+  ["Priya Student", "student5@edtech.local", "student"],
 ];
 
 export const seedDatabase = async () => {
-  if (!process.env.MONGO_URI) throw new Error("Missing MONGO_URI");
-  await mongoose.connect(process.env.MONGO_URI);
+  const mongoUri = process.env.MONGO_URI;
+  if (!mongoUri) throw new Error("Missing MONGO_URI");
+
+  const options = {};
+  if (!mongoUri.includes("/edtech")) {
+    options.dbName = "edtech";
+  }
+  
+  console.log("Connecting to MongoDB...");
+  await mongoose.connect(mongoUri, options);
+  console.log("Connected to MongoDB. Clearing existing data...");
 
   // Clear existing data
   await Promise.all([
@@ -105,10 +141,11 @@ export const seedDatabase = async () => {
     UserActivity.deleteMany({}),
     RecommendationFeedback.deleteMany({}),
     Notification.deleteMany({}),
+    Payment.deleteMany({}),
   ]);
 
   const users = await User.create(
-    usersData.map(([name, email, role]) => ({
+    usersData.map(([name, email, role, verificationStatus]) => ({
       name,
       email,
       password,
@@ -127,21 +164,36 @@ export const seedDatabase = async () => {
             }
           : {},
       instructorProfile:
-        role === "instructor"
-          ? {
-              bio: t(`${name} teaches practical technology courses.`),
-              expertise: ["Programming", "Cloud", "Data Science"],
-              verification: { status: "APPROVED" },
-              rating: 4.6,
-              totalCourses: 0,
-            }
-          : undefined,
-    }))
+      role === "instructor"
+      ? {
+      bio: t(
+        `${name} teaches practical technology courses.`,
+        `${name} व्यावहारिक तकनीकी पाठ्यक्रम पढ़ाते हैं।`,
+        `${name} व्यावहारिक तांत्रिक अभ्यासक्रम शिकवतात.`
+      ),
+      expertise: ["Programming", "Cloud", "Data Science"],
+      verification: { 
+        status: verificationStatus || "NOT_APPLIED",
+        submittedAt: verificationStatus === "APPROVED" ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : undefined
+      },
+      rating: 4.6,
+      totalCourses: 0,
+      }
+      : undefined,    }))
   );
 
   const admins = users.filter((u) => u.role === "admin");
   const instructors = users.filter((u) => u.role === "instructor");
   const students = users.filter((u) => u.role === "student");
+
+  const categoryTranslations = {
+    "Programming": ["प्रोग्रामिंग", "प्रोग्रामिंग"],
+    "Data Science": ["डेटा साइंस", "डेटा सायन्स"],
+    "Networking": ["नेटवर्किंग", "नेटवर्किंग"],
+    "Cybersecurity": ["साइबर सुरक्षा", "सायबर सुरक्षा"],
+    "Cloud Computing": ["क्लाउड कंप्यूटिंग", "क्लाउड कॉम्प्युटिंग"],
+    "Business Skills": ["व्यावसायिक कौशल", "व्यावसायिक कौशल्ये"]
+  };
 
   const categories = await Category.insertMany(
     [
@@ -152,9 +204,13 @@ export const seedDatabase = async () => {
       "Cloud Computing",
       "Business Skills",
     ].map((name) => ({
-      name: t(name),
+      name: t(name, categoryTranslations[name][0], categoryTranslations[name][1]),
       slug: name.toLowerCase().replace(/\s+/g, "-"),
-      description: t(`${name} courses`),
+      description: t(
+        `${name} courses`,
+        `${categoryTranslations[name][0]} पाठ्यक्रम`,
+        `${categoryTranslations[name][1]} अभ्यासक्रम`
+      ),
       isActive: true,
     }))
   );
@@ -185,32 +241,47 @@ export const seedDatabase = async () => {
 
   const quizIds = [oid(), oid(), oid()];
   const courseSpecs = [
-    ["Python Foundations", "Programming", "Beginner", 0, instructors[0]],
-    ["React Application Builder", "Programming", "Intermediate", 1499, instructors[0]],
-    ["Data Science with Python", "Data Science", "Beginner", 1999, instructors[1]],
-    ["Networking Essentials", "Networking", "Beginner", 0, instructors[1]],
-    ["Cybersecurity Basics", "Cybersecurity", "Beginner", 999, instructors[2]],
-    ["AWS Cloud Starter", "Cloud Computing", "Beginner", 1299, instructors[2]],
-    ["Advanced React Patterns", "Programming", "Advanced", 2499, instructors[0]],
-    ["Machine Learning Intro", "Data Science", "Intermediate", 2999, instructors[1]],
-    ["Secure Web Apps", "Cybersecurity", "Intermediate", 1799, instructors[2]],
-    ["Productivity for Professionals", "Business Skills", "Beginner", 0, instructors[0]],
-    ["Draft Kubernetes Deep Dive", "Cloud Computing", "Advanced", 3499, instructors[2], "DRAFT"],
+    ["Python Foundations", "Programming", "Beginner", 0, instructors[0], "PUBLISHED"],
+    ["React Application Builder", "Programming", "Intermediate", 1499, instructors[0], "PUBLISHED"],
+    ["Data Science with Python", "Data Science", "Beginner", 1999, instructors[1], "PUBLISHED"],
+    ["Networking Essentials", "Networking", "Beginner", 0, instructors[1], "PENDING_REVIEW"],
+    ["Cybersecurity Basics", "Cybersecurity", "Beginner", 999, instructors[0], "REJECTED"],
+    ["AWS Cloud Starter", "Cloud Computing", "Beginner", 1299, instructors[0], "PAYMENT_PENDING"],
+    ["Advanced React Patterns", "Programming", "Advanced", 2499, instructors[1], "PUBLISHED"],
+    ["Machine Learning Intro", "Data Science", "Intermediate", 2999, instructors[1], "PUBLISHED"],
+    ["Secure Web Apps", "Cybersecurity", "Intermediate", 1799, instructors[0], "DRAFT"],
+    ["Productivity for Professionals", "Business Skills", "Beginner", 0, instructors[0], "PUBLISHED"],
+    ["Draft Kubernetes Deep Dive", "Cloud Computing", "Advanced", 3499, instructors[1], "DRAFT"],
     ["Draft Business Analytics", "Business Skills", "Intermediate", 1599, instructors[1], "DRAFT"],
   ];
 
+  const courseTranslations = {
+    "Python Foundations": ["पायथन की बुनियादी बातें", "पायथनची पायाभरणी"],
+    "React Application Builder": ["रिएक्ट एप्लीकेशन बिल्डर", "रिएक्ट ॲप्लिकेशन बिल्डर"],
+    "Data Science with Python": ["पायथन के साथ डेटा साइंस", "पायथनसह डेटा सायन्स"],
+    "Networking Essentials": ["नेटवर्किंग की अनिवार्यताएं", "नेटवर्किंगची आवश्यकता"],
+    "Cybersecurity Basics": ["साइबर सुरक्षा मूल बातें", "सायबर सुरक्षा मूलभूत गोष्टी"],
+    "AWS Cloud Starter": ["एडब्ल्यूएस क्लाउड स्टार्टर", "एडब्ल्यूएस क्लाउड स्टार्टर"],
+    "Advanced React Patterns": ["उन्नत रिएक्ट पैटर्न", "प्रगत रिएक्ट नमुने"],
+    "Machine Learning Intro": ["मशीन लर्निंग परिचय", "मशीन लर्निंग परिचय"],
+    "Secure Web Apps": ["सुरक्षित वेब ऐप्स", "सुरक्षित वेब ॲप्स"],
+    "Productivity for Professionals": ["पेशेवरों के लिए उत्पादकता", "व्यावसायिकांसाठी उत्पादकता"],
+    "Draft Kubernetes Deep Dive": ["कुबेरनेट्स डीप डाइव", "कुबेरनेट्स डीप डाइव"],
+    "Draft Business Analytics": ["बिजनेस एनालिटिक्स", "बिझनेस ॲनालिटिक्स"]
+  };
+
   const courses = [];
   for (let i = 0; i < courseSpecs.length; i += 1) {
-    const [title, categoryName, difficulty, price, instructor, status = "PUBLISHED"] = courseSpecs[i];
+    const [title, categoryName, difficulty, price, instructor, status] = courseSpecs[i];
     const category = categories.find((c) => c.name.en === categoryName);
     const quizId = quizIds[i] || undefined;
     const full = i < 3 ? makeFullModules(title, quizId) : { modules: [] };
-    courses.push(
-      await Course.create({
-        title: t(title, `${title} Hindi`, `${title} Marathi`),
-        description: t(`${title} is a practical, project-focused course.`),
-        shortDescription: t(`Learn ${title} with structured lessons.`),
-        languageAvailable: i % 3 === 0 ? ["en", "hi", "mr"] : ["en"],
+
+    const courseData = {
+        title: t(title, courseTranslations[title][0], courseTranslations[title][1]),
+        description: t(`${title} is a practical, project-focused course.`, `${title} एक व्यावहारिक, प्रोजेक्ट-केंद्रित कोर्स है।`, `${title} हा एक व्यावहारिक, प्रकल्प-केंद्रीत कोर्स आहे.`),
+        shortDescription: t(`Learn ${title} with structured lessons.`, `संरचित पाठों के साथ ${title} सीखें।`, `संरचित धड्यांसह ${title} शिका.`),
+        languageAvailable: ["en", "hi", "mr"],
         categoryId: category._id,
         tags: { en: [categoryName, difficulty], hi: [], mr: [] },
         difficulty,
@@ -244,8 +315,44 @@ export const seedDatabase = async () => {
           feedbackScore: 0,
         },
         status,
-      })
-    );
+      };
+
+      // Add workflow dates
+      if (status !== "DRAFT") {
+        courseData.submittedAt = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+      }
+      if (["PUBLISHED", "PAYMENT_PENDING", "REJECTED"].includes(status)) {
+        courseData.reviewedAt = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+        courseData.reviewedBy = admins[0]._id;
+      }
+      if (status === "REJECTED") {
+        courseData.rejectionReason = "Course content is too brief. Please add more modules and interactive elements.";
+      }
+      if (status === "PUBLISHED") {
+        courseData.publishedAt = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
+        courseData.platformFeePaid = true;
+      }
+
+    courses.push(await Course.create(courseData));
+  }
+
+  // Create some publishing fee payments for published courses
+  for (const course of courses.filter(c => c.status === "PUBLISHED")) {
+    const payment = await Payment.create({
+        userId: course.instructorId,
+        courseId: course._id,
+        amount: 499,
+        currency: "INR",
+        provider: "RAZORPAY",
+        razorpayOrderId: `order_pub_${course._id.toString().slice(-6)}`,
+        razorpayPaymentId: `pay_pub_${course._id.toString().slice(-6)}`,
+        razorpaySignature: "seeded_signature",
+        status: "SUCCESS",
+        purpose: "COURSE_PUBLISHING_FEE",
+        paidAt: course.publishedAt
+    });
+    course.platformFeePaymentId = payment._id;
+    await course.save();
   }
 
   for (let i = 0; i < 3; i += 1) {
@@ -258,14 +365,14 @@ export const seedDatabase = async () => {
       courseId: course._id,
       moduleId,
       submoduleId,
-      title: t(`${course.title.en} Quiz`),
+      title: t(`${course.title.en} Quiz`, `${course.title.en} प्रश्नोत्तरी`, `${course.title.en} प्रश्नमंजुषा`),
       questions: [
         {
           questionId: oid(),
-          questionText: t("What is the main purpose of this lesson?"),
+          questionText: t("What is the main purpose of this lesson?", "इस पाठ का मुख्य उद्देश्य क्या है?", "या धड्याचा मुख्य उद्देश काय आहे?"),
           options: [
-            { optionId, text: t("Understand the foundation") },
-            { optionId: oid(), text: t("Skip the basics") },
+            { optionId, text: t("Understand the foundation", "बुनियाद को समझना", "पाया समजून घेणे") },
+            { optionId: oid(), text: t("Skip the basics", "बुनियादी बातों को छोड़ना", "मूलभूत गोष्टी सोडणे") },
           ],
           correctOptionId: optionId,
           marks: 1,
@@ -285,6 +392,25 @@ export const seedDatabase = async () => {
 
   const enrollments = [];
   for (const item of enrollmentPayloads) {
+    // Create payment for the enrollment if course is paid
+    let paymentId = undefined;
+    if (item.course.isPaid) {
+        const pay = await Payment.create({
+            userId: item.userId,
+            courseId: item.course._id,
+            amount: item.course.price,
+            currency: "INR",
+            provider: "RAZORPAY",
+            razorpayOrderId: `order_buy_${item.course._id.toString().slice(-6)}`,
+            razorpayPaymentId: `pay_buy_${item.course._id.toString().slice(-6)}`,
+            razorpaySignature: "seeded_signature",
+            status: "SUCCESS",
+            purpose: "COURSE_PURCHASE",
+            paidAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
+        });
+        paymentId = pay._id;
+    }
+
     const blocks = flattenSeedBlocks(item.course);
     const completedBlocks = item.completed
       ? blocks.map((b) => ({ ...b, completedAt: new Date() }))
@@ -293,6 +419,7 @@ export const seedDatabase = async () => {
       await Enrollment.create({
         userId: item.userId,
         courseId: item.course._id,
+        paymentId,
         accessStatus: "ACTIVE",
         status: item.completed ? "COMPLETED" : "ENROLLED",
         progressPercentage: item.completed ? 100 : 33,
@@ -321,7 +448,11 @@ export const seedDatabase = async () => {
       userId: student._id,
       courseId: course._id,
       rating,
-      review: t("Clear course content and useful structure."),
+      review: t(
+        "Clear course content and useful structure.",
+        "स्पष्ट पाठ्यक्रम सामग्री और उपयोगी संरचना।",
+        "स्पष्ट अभ्यासक्रम सामग्री आणि उपयुक्त रचना."
+      ),
     }))
   );
 
@@ -353,14 +484,14 @@ export const seedDatabase = async () => {
   await Notification.insertMany([
     {
       userId: students[0]._id,
-      title: t("Welcome to EduLearn"),
-      message: t("Your seeded account is ready."),
+      title: t("Welcome to EdTech", "EdTech में आपका स्वागत है", "EdTech मध्ये आपले स्वागत आहे"),
+      message: t("Your seeded account is ready.", "आपका सीडेड अकाउंट तैयार है।", "तुमचे सीडेड अकाउंट तयार आहे."),
       type: "ADMIN",
     },
     {
       userId: students[1]._id,
-      title: t("Course enrollment active"),
-      message: t("Your lifetime access is active."),
+      title: t("Course enrollment active", "कोर्स नामांकन सक्रिय", "कोर्स नोंदणी सक्रिय"),
+      message: t("Your lifetime access is active.", "आपकी लाइफटाइम एक्सेस सक्रिय है।", "तुमची लाइफटाइम ॲक्सेस सक्रिय आहे."),
       type: "COURSE",
       relatedCourseId: courses[1]._id,
       relatedEnrollmentId: enrollments[1]._id,
@@ -393,13 +524,16 @@ const flattenSeedBlocks = (course) =>
     )
   );
 
+// Run the seed
 if (import.meta.url === `file://${process.argv[1].replace(/\\/g, "/")}`) {
   seedDatabase()
     .then(async () => {
+      console.log("Seeding finished successfully.");
       await mongoose.disconnect();
+      process.exit(0);
     })
     .catch(async (error) => {
-      console.error(error);
+      console.error("Seeding failed:", error);
       await mongoose.disconnect().catch(() => null);
       process.exit(1);
     });

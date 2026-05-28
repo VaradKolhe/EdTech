@@ -6,6 +6,9 @@ import {
   getCourseById,
   updateCourse,
   saveCourseContent,
+  submitCourseForReview,
+  createPlatformFeeOrder,
+  verifyPlatformFee,
 } from "../controllers/courseController.js";
 
 const router = express.Router();
@@ -17,5 +20,10 @@ router.get("/", getCourses);
 router.get("/:id", getCourseById);
 router.put("/:id", updateCourse);
 router.put("/:courseId/content", saveCourseContent);
+
+// Approval & Payment Workflow
+router.patch("/:id/submit-review", submitCourseForReview);
+router.post("/:courseId/platform-fee/order", createPlatformFeeOrder);
+router.post("/:courseId/platform-fee/verify", verifyPlatformFee);
 
 export default router;

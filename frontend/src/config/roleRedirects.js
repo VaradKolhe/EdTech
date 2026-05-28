@@ -4,7 +4,13 @@ export const ROLE_REDIRECT_PATHS = {
   admin: "/admin-dashboard",
 };
 
-export const getRoleRedirectPath = (role) => ROLE_REDIRECT_PATHS[role] ?? "/";
+export const getRoleRedirectPath = (user) => {
+  if (!user) return "/";
+  if (user.role === "student" && !isStudentProfileComplete(user.profile)) {
+    return "/student-onboarding";
+  }
+  return ROLE_REDIRECT_PATHS[user.role] ?? "/";
+};
 
 export const isStudentProfileComplete = (profile = {}) =>
   Boolean(

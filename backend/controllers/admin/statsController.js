@@ -46,7 +46,7 @@ export const getPlatformStats = async (_req, res) => {
 
 export const getReports = async (_req, res) => {
   try {
-    const [userCounts, feedbackStats, courseStats] = await Promise.all([
+    const [userCounts, feedbackStats, courseStats, topCourses] = await Promise.all([
       User.aggregate([
         { $match: { isActive: true } },
         { $group: { _id: "$role", count: { $sum: 1 } } },
@@ -61,12 +61,51 @@ export const getReports = async (_req, res) => {
         },
       ]),
       Course.aggregate([
-        { $match: {} },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "categoryId",
+            foreignField: "_id",
+            as: "category",
+          },
+        },
+        {
+          $unwind: {
+            path: "$category",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
         {
           $group: {
-            _id: "$categoryId",
+            _id: { $ifNull: ["$category.name.en", "Uncategorized"] },
             count: { $sum: 1 },
-            avgPrice: { $avg: "$price" },
+          },
+        },
+      ]),
+      Rating.aggregate([
+        {
+          $group: {
+            _id: "$courseId",
+            avgRating: { $avg: "$rating" },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { avgRating: -1, count: -1 } },
+        { $limit: 5 },
+        {
+          $lookup: {
+            from: "courses",
+            localField: "_id",
+            foreignField: "_id",
+            as: "course",
+          },
+        },
+        { $unwind: "$course" },
+        {
+          $project: {
+            name: "$course.title.en",
+            rating: { $round: ["$avgRating", 1] },
+            count: 1,
           },
         },
       ]),
@@ -81,7 +120,11 @@ export const getReports = async (_req, res) => {
         total: feedbackStats[0]?.total ?? 0,
         averageRating: Number((feedbackStats[0]?.avg ?? 0).toFixed(2)),
       },
-      courseStats,
+      courseStats: courseStats.map((c) => ({
+        name: c._id,
+        count: c.count,
+      })),
+      topCourses,
     });
   } catch (error) {
     res.status(500).json({ message: error.message || "Failed to fetch reports" });

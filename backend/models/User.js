@@ -80,7 +80,14 @@ const userSchema = new mongoose.Schema(
           enum: ["NOT_APPLIED", "PENDING", "APPROVED", "REJECTED"],
           default: "NOT_APPLIED",
         },
-        documents: [{ type: String, trim: true }],
+        workEmail: { type: String, trim: true, lowercase: true },
+        links: [{ type: String, trim: true }], // e.g. LinkedIn, Portfolio, GitHub
+        documents: [{
+          name: { type: String, trim: true },
+          url: { type: String, trim: true },
+          type: { type: String, enum: ["CERTIFICATE", "DEGREE", "EXPERIENCE_LETTER", "OTHER"] }
+        }],
+        submittedAt: Date,
         reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         reviewedAt: Date,
         rejectionReason: { type: String, trim: true, default: "" },

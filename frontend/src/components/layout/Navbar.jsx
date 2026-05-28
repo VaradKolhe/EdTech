@@ -11,14 +11,20 @@ import {
 } from "@heroicons/react/24/outline";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "../ui/LanguageSwitcher";
 
 export default function Navbar() {
   const { dark, toggle } = useTheme();
   const { user, logout, isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState("");
 
   const role = user?.role;
   const isStudent = role === "student";
@@ -26,9 +32,9 @@ export default function Navbar() {
   const isAdmin = role === "admin";
 
   const navLinks = isStudent ? [
-    { name: "Dashboard", path: "/student-dashboard" },
-    { name: "My Courses", path: "/student-dashboard/my-courses" },
-    { name: "Browse", path: "/student-dashboard/browse" },
+    { name: t("navbar.dashboard"), path: "/student-dashboard" },
+    { name: t("navbar.myCourses"), path: "/student-dashboard/my-courses" },
+    { name: t("navbar.browse"), path: "/student-dashboard/browse" },
   ] : [];
 
   // Close menu when clicking outside
@@ -52,6 +58,13 @@ export default function Navbar() {
     navigate("/login");
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    navigate(`/student-dashboard/browse?q=${encodeURIComponent(searchQuery.trim())}`);
+    setSearchQuery("");
+  };
+
   const getProfilePath = () => {
     return "/profile";
   };
@@ -66,14 +79,14 @@ export default function Navbar() {
           <div className="rounded-lg bg-brand-600 p-1 text-white shadow-lg shadow-brand-600/20">
             <AcademicCapIcon className="h-6 w-6" />
           </div>
-          <span>EduLearn</span>
+          <span>EdTech</span>
         </Link>
 
         {(isStudent || isInstructor) && (
           <nav className="hidden md:flex items-center gap-6">
-            {(isStudent ? navLinks : [{ name: "Workspace", path: "/instructor-dashboard" }]).map((link) => (
+            {(isStudent ? navLinks : [{ name: t("navbar.instructorWorkspace"), path: "/instructor-dashboard" }]).map((link) => (
               <Link
-                key={link.name}
+                key={link.path}
                 to={link.path}
                 className={`text-sm font-bold transition-colors ${
                   location.pathname === link.path 
@@ -90,15 +103,19 @@ export default function Navbar() {
 
       <div className="flex items-center gap-4">
         {isStudent && (
-          <div className="relative hidden lg:block">
+          <form onSubmit={handleSearch} className="relative hidden lg:block">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Ask AI to find courses..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t("common.search")} 
               className="h-9 w-64 rounded-full border border-slate-200 bg-slate-50 pl-10 pr-4 text-xs transition-all focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             />
-          </div>
+          </form>
         )}
+
+        <LanguageSwitcher />
 
         <button
           onClick={toggle}
@@ -115,10 +132,10 @@ export default function Navbar() {
         {!isAuthenticated ? (
           <div className="flex items-center gap-4 pl-2 border-l border-slate-200 dark:border-slate-800">
             <Link to="/login" className="text-sm font-bold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
-              Sign In
+              {t("common.login")}
             </Link>
             <Link to="/register/student" className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-black text-white shadow-lg shadow-brand-600/20 hover:bg-brand-700 transition-colors">
-              Get Started
+              {t("common.register")}
             </Link>
           </div>
         ) : (
@@ -134,7 +151,7 @@ export default function Navbar() {
             {menuOpen && (
               <div className="absolute right-0 mt-3 w-56 origin-top-right rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none dark:border-slate-700 dark:bg-[#161b22]">
                 <div className="mb-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">Account</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">{t("common.profile")}</p>
                   <p className="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">{user?.name}</p>
                   <p className="truncate text-xs text-slate-500">{user?.email}</p>
                 </div>
@@ -144,7 +161,7 @@ export default function Navbar() {
                   className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 hover:text-brand-600 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-brand-400"
                 >
                   <UserIcon className="h-4 w-4" />
-                  Profile Details
+                  {t("common.profile")}
                 </Link>
 
                 {isAdmin && (
@@ -153,7 +170,7 @@ export default function Navbar() {
                     className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 hover:text-brand-600 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-brand-400"
                   >
                     <AdjustmentsHorizontalIcon className="h-4 w-4" />
-                    Admin Panel
+                    {t("navbar.adminPanel")}
                   </Link>
                 )}
 
@@ -162,7 +179,7 @@ export default function Navbar() {
                   className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-rose-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/30"
                 >
                   <ArrowLeftOnRectangleIcon className="h-4 w-4" />
-                  Sign Out
+                  {t("common.logout")}
                 </button>
               </div>
             )}
